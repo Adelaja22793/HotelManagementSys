@@ -16,6 +16,30 @@ public class HmsDbContext(DbContextOptions<HmsDbContext> options)
     public DbSet<HotelUserBranch> UserBranches => Set<HotelUserBranch>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<BranchSequence> BranchSequences => Set<BranchSequence>();
+
+    public DbSet<RoomType> RoomTypes => Set<RoomType>();
+    public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<RoomBlock> RoomBlocks => Set<RoomBlock>();
+    public DbSet<RatePlan> RatePlans => Set<RatePlan>();
+    public DbSet<RoomRate> RoomRates => Set<RoomRate>();
+    public DbSet<TaxRule> TaxRules => Set<TaxRule>();
+    public DbSet<ServiceItem> ServiceItems => Set<ServiceItem>();
+    public DbSet<Guest> Guests => Set<Guest>();
+    public DbSet<RoomNightInventory> RoomNightInventory => Set<RoomNightInventory>();
+    public DbSet<AssignedRoomNight> AssignedRoomNights => Set<AssignedRoomNight>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<ReservationNight> ReservationNights => Set<ReservationNight>();
+    public DbSet<Stay> Stays => Set<Stay>();
+    public DbSet<HousekeepingTask> HousekeepingTasks => Set<HousekeepingTask>();
+    public DbSet<Folio> Folios => Set<Folio>();
+    public DbSet<FolioCharge> FolioCharges => Set<FolioCharge>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<Refund> Refunds => Set<Refund>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<CashierShift> CashierShifts => Set<CashierShift>();
+    public DbSet<CashierMovement> CashierMovements => Set<CashierMovement>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

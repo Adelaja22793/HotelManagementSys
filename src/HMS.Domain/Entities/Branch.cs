@@ -33,6 +33,9 @@ public class Branch : AuditableEntity, IConcurrencyTracked
     /// </summary>
     public TimeOnly BusinessDayCutoffLocal { get; private set; } = new(0, 0);
 
+    /// <summary>When true a supervisor must inspect a cleaned room before it becomes VacantClean.</summary>
+    public bool HousekeepingRequiresInspection { get; private set; } = true;
+
     public bool IsActive { get; private set; } = true;
     public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
 
@@ -47,6 +50,7 @@ public class Branch : AuditableEntity, IConcurrencyTracked
     }
 
     public void SetBusinessDayCutoff(TimeOnly cutoffLocal) => BusinessDayCutoffLocal = cutoffLocal;
+    public void SetHousekeepingInspection(bool required) => HousekeepingRequiresInspection = required;
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
 

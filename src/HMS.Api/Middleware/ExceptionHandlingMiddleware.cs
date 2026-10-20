@@ -1,6 +1,7 @@
 using HMS.Application.Common;
 using HMS.Contracts.Common;
 using HMS.Domain.Common;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace HMS.Api.Middleware;
@@ -32,10 +33,21 @@ internal sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<
     {
         ValidationAppException v => (400, ApiError.Create(v.Code, v.Message, traceId, v.Errors)),
         AppException a => (a.StatusCode, ApiError.Create(a.Code, a.Message, traceId)),
+        DomainConflictException c => (409, ApiError.Create(c.Code, c.Message, traceId)),
         DomainException d => (400, ApiError.Create(d.Code, d.Message, traceId)),
         DbUpdateConcurrencyException => (409, ApiError.Create(ErrorCodes.ConcurrencyConflict,
             "The record was changed by someone else. Reload and try again.", traceId)),
+        _ when IsDeadlock(ex) => (409, ApiError.Create(ErrorCodes.ConcurrencyConflict,
+            "Another request was updating the same records. Try again.", traceId)),
         OperationCanceledException => (499, ApiError.Create("REQUEST_CANCELLED", "The request was cancelled.", traceId)),
         _ => (500, ApiError.Create(ErrorCodes.ServerError, "An unexpected error occurred.", traceId)),
     };
+
+    /// <summary>SQL Server deadlock victims (error 1205) are safe to retry; tell the client so instead of a 500.</summary>
+    private static bool IsDeadlock(Exception ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+            if (e is SqlException { Number: 1205 }) return true;
+        return false;
+    }
 }

@@ -33,6 +33,7 @@ public static class Permissions
     public const string FoliosPost = "folios.post";
     public const string FolioAdjust = "folios.adjust";
     public const string PaymentsRecord = "payments.record";
+    public const string PaymentsVerify = "payments.verify";
     public const string RefundsRequest = "refunds.request";
     public const string RefundsApprove = "refunds.approve";
     public const string DiscountsApprove = "discounts.approve";

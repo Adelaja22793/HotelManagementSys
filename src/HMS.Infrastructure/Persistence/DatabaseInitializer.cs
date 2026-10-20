@@ -1,3 +1,4 @@
+using HMS.Application.Common;
 using HMS.Application.Security;
 using HMS.Domain.Entities;
 using HMS.Infrastructure.Identity;
@@ -33,6 +34,15 @@ public static class DatabaseInitializer
 
         await SeedRolesAsync(sp.GetRequiredService<RoleManager<IdentityRole>>());
         await BootstrapAsync(sp, db, logger, cancellationToken);
+        await EnsureSequencesAsync(sp, db, cancellationToken);
+    }
+
+    private static async Task EnsureSequencesAsync(IServiceProvider sp, HmsDbContext db, CancellationToken ct)
+    {
+        var numbers = sp.GetRequiredService<INumberSequence>();
+        foreach (var branchId in await db.Branches.Select(b => b.Id).ToListAsync(ct))
+            await numbers.EnsureCountersAsync(branchId, ct);
+        await db.SaveChangesAsync(ct);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roles)

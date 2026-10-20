@@ -213,7 +213,7 @@ public class FoundationTests(HmsApiFactory factory) : IClassFixture<HmsApiFactor
     }
 
     private static UpdateBranchRequest ToUpdate(BranchDto b, string name) =>
-        new(name, b.TimeZoneId, b.Currency, b.AddressLine, b.City, b.Phone, null, true, b.ConcurrencyStamp);
+        new(name, b.TimeZoneId, b.Currency, b.AddressLine, b.City, b.Phone, null, null, true, b.ConcurrencyStamp);
 
     private static async Task<BranchDto> CreateBranchAsync(HttpClient admin, string code, string name) =>
         await ApiAssert.OkAsync<BranchDto>(

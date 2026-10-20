@@ -24,8 +24,8 @@ public static class RolePermissions
             RoomsManage, RatesManage, GuestsManage, ReservationsManage, OverbookingOverride,
             FrontDeskCheckIn, FrontDeskCheckOut, CheckOutWithBalance,
             HousekeepingWork, HousekeepingInspect,
-            FoliosPost, FolioAdjust, PaymentsRecord, RefundsRequest, RefundsApprove, DiscountsApprove,
-            CashierApproveVariance,
+            FoliosPost, FolioAdjust, PaymentsRecord, PaymentsVerify, RefundsRequest, RefundsApprove, DiscountsApprove,
+            CashierOperate, CashierApproveVariance,
             InventoryManage, PurchasingManage, PurchasingApprove, RestaurantManage, RestaurantOperate,
             MaintenanceManage, MaintenanceWork, StaffManage, SecurityManage,
             DocumentsManage, DocumentsApprove, NotificationsManage, BusinessDayClose,
@@ -49,7 +49,7 @@ public static class RolePermissions
 
         [Roles.Accountant] =
         [
-            BranchesView, FoliosView, ReportsView, AccountingView, AccountingPost, AccountingManage,
+            BranchesView, FoliosView, PaymentsVerify, ReportsView, AccountingView, AccountingPost, AccountingManage,
             AuditView, InventoryView, PurchasingManage, DocumentsView,
         ],
 

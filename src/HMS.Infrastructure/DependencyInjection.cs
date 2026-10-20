@@ -30,7 +30,9 @@ public static class DependencyInjection
             if (string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
                 options.UseSqlite(connectionString);
             else
-                options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(3));
+                // No automatic retry strategy: services use explicit transactions, and clients retry
+                // safely with idempotency keys instead.
+                options.UseSqlServer(connectionString);
             options.AddInterceptors(sp.GetRequiredService<AuditingInterceptor>());
         });
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<HmsDbContext>());
