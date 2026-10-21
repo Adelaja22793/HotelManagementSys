@@ -56,3 +56,21 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet test tests/HMS.Desktop.Tests -c Release
+
+  booking-web:
+    name: Booking website (typecheck, test, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: booking-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: booking-web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
