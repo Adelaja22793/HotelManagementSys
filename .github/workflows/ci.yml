@@ -40,6 +40,8 @@ jobs:
           for p in tests/HMS.Domain.UnitTests tests/HMS.Application.UnitTests
           tests/HMS.Api.IntegrationTests tests/HMS.Infrastructure.IntegrationTests tests/HMS.SecurityTests; do
           dotnet test $p -c Release --no-build --logger "trx;LogFilePrefix=$(basename $p)" || exit 1; done
+      - name: Performance targets (SQL Server)
+        run: dotnet test tests/HMS.PerformanceTests -c Release --no-build --logger "console;verbosity=normal"
       - name: Check for model changes without a migration
         run: |
           dotnet tool restore
