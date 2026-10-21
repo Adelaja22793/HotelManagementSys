@@ -125,6 +125,10 @@ public static class DefaultTemplates
             "A cashier shift for {{BusinessDate}} closed with a variance: {{Variances}}."),
         [(NotificationEvents.DailyReportReady, NotificationChannel.InApp)] = ("Night audit {{BusinessDate}} complete",
             "Occupancy {{Occupancy}}%, ADR {{Currency}} {{Adr}}, RevPAR {{Currency}} {{RevPar}}, room revenue {{Currency}} {{RoomRevenue}}, collections {{Currency}} {{Collections}}."),
+        [(NotificationEvents.OnlinePaymentNeedsReview, NotificationChannel.InApp)] = ("Online payment needs attention: {{Reference}}",
+            "{{GuestName}} ({{GuestEmail}}) paid {{Currency}} {{Amount}} online ({{MerchantReference}}) but the booking was not completed because {{Reason}}. Refund or rebook the guest, then resolve the payment."),
+        [(NotificationEvents.CancellationRequested, NotificationChannel.InApp)] = ("Cancellation requested: {{Reference}}",
+            "{{GuestName}} asked to cancel web booking {{Reference}} arriving {{ArrivalDate}}. Reason: {{Reason}}"),
     };
 
     public static (string? Subject, string Body) For(string eventType, NotificationChannel channel) =>

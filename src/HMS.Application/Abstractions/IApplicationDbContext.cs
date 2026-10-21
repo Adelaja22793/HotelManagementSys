@@ -99,6 +99,11 @@ public interface IApplicationDbContext
     DbSet<GuestComplaint> GuestComplaints { get; }
     DbSet<EmergencyEvent> EmergencyEvents { get; }
     DbSet<EmergencyAction> EmergencyActions { get; }
+    DbSet<BookingHold> BookingHolds { get; }
+    DbSet<BookingHoldRoom> BookingHoldRooms { get; }
+    DbSet<BookingPaymentAttempt> BookingPaymentAttempts { get; }
+    DbSet<BookingChannel> BookingChannels { get; }
+    DbSet<ChannelReservationMapping> ChannelReservationMappings { get; }
 
     DatabaseFacade Database { get; }
 

@@ -3,6 +3,7 @@ using HMS.Application.Documents;
 using HMS.Application.Security;
 using HMS.Contracts.Documents;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HMS.Api.Controllers;
 
@@ -26,6 +27,7 @@ public sealed class DocumentsController(IDocumentService documents) : ApiControl
     /// </summary>
     [HttpPost]
     [HasPermission(Permissions.DocumentsView)]
+    [EnableRateLimiting(RateLimitPolicies.Upload)]
     [RequestSizeLimit(MaxRequestBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes)]
     public async Task<ActionResult<DocumentDto>> Upload(Guid branchId, IFormFile file, [FromForm] string title, [FromForm] string category,
@@ -39,6 +41,7 @@ public sealed class DocumentsController(IDocumentService documents) : ApiControl
 
     [HttpPost("{documentId:guid}/versions")]
     [HasPermission(Permissions.DocumentsView)]
+    [EnableRateLimiting(RateLimitPolicies.Upload)]
     [RequestSizeLimit(MaxRequestBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes)]
     public async Task<ActionResult<DocumentDto>> AddVersion(Guid branchId, Guid documentId, IFormFile file, CancellationToken ct)

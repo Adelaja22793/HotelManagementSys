@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using HMS.Application.Abstractions;
 using HMS.Application.Documents;
+using HMS.Application.PublicBooking;
 using HMS.Contracts.Auth;
 using HMS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,7 @@ public sealed class TestClock : IClock
     private TimeSpan _offset;
     public DateTime UtcNow => DateTime.UtcNow + _offset;
     public void AdvanceDays(int days) => _offset += TimeSpan.FromDays(days);
+    public void Advance(TimeSpan by) => _offset += by;
 }
 
 /// <summary>Scanner the tests control: clean by default, or flags any file containing the EICAR marker.</summary>
@@ -37,6 +39,48 @@ public sealed class FakeMalwareScanner : IMalwareScanner
         return text.Contains("EICAR-TEST", StringComparison.Ordinal)
             ? new ScanVerdict(ScanOutcome.Infected, "Eicar-Test-Signature")
             : new ScanVerdict(ScanOutcome.Clean, null);
+    }
+}
+
+/// <summary>
+/// Payment provider the tests control. Payments succeed for the amount that was started unless a test overrides the
+/// result. Webhooks are signed with HMAC-SHA256 over the body using <see cref="WebhookSecret"/>.
+/// </summary>
+public sealed class FakePaymentGateway : IPaymentGateway
+{
+    public const string WebhookSecret = "test-webhook-secret";
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (decimal Amount, string Currency)> _started = new();
+
+    public string Name => "fake";
+    public Func<string, GatewayVerification?>? Override { get; set; }
+    public bool InitializeFails { get; set; }
+    public int VerifyCalls;
+
+    public Task<GatewayInitResult> InitializeAsync(GatewayInitRequest request, CancellationToken ct)
+    {
+        if (InitializeFails) return Task.FromResult(new GatewayInitResult(false, null, "provider down"));
+        _started[request.MerchantReference] = (request.Amount, request.Currency);
+        return Task.FromResult(new GatewayInitResult(true, "https://pay.example/checkout/" + request.MerchantReference, null));
+    }
+
+    public Task<GatewayVerification> VerifyAsync(string merchantReference, CancellationToken ct)
+    {
+        Interlocked.Increment(ref VerifyCalls);
+        if (Override?.Invoke(merchantReference) is { } custom) return Task.FromResult(custom);
+        return Task.FromResult(_started.TryGetValue(merchantReference, out var s)
+            ? new GatewayVerification(GatewayOutcome.Success, "success", "TX-" + merchantReference, s.Amount, s.Currency, merchantReference)
+            : new GatewayVerification(GatewayOutcome.Unknown, "not-found", null, null, null, null));
+    }
+
+    public static string Sign(byte[] body) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.HMACSHA256.HashData(System.Text.Encoding.UTF8.GetBytes(WebhookSecret), body));
+
+    public bool IsValidWebhook(ReadOnlySpan<byte> body, string? signature) => signature is not null && signature == Sign(body.ToArray());
+
+    public GatewayWebhookEvent? ParseWebhook(ReadOnlySpan<byte> body)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(body.ToArray());
+        return new GatewayWebhookEvent(doc.RootElement.GetProperty("event").GetString()!, doc.RootElement.GetProperty("reference").GetString());
     }
 }
 
@@ -73,6 +117,9 @@ public class HmsApiFactory : WebApplicationFactory<Program>
     public FakeMalwareScanner Scanner { get; } = new();
 
     protected virtual int AuthPermitPerMinute => 10_000;
+    protected virtual int PublicWritePerMinute => 10_000;
+    public const string BookingSite = "https://book.hms.test";
+    public FakePaymentGateway Payments { get; } = new();
 
     private string ConnectionString => UsesSqlServer
         ? $"{SqlServerBase};Database={_dbName};TrustServerCertificate=True"
@@ -103,6 +150,12 @@ public class HmsApiFactory : WebApplicationFactory<Program>
                 ["Email:Mode"] = "Pickup",
                 ["Email:PickupDirectory"] = MailPickupPath,
                 ["Email:FromAddress"] = "noreply@hms.test",
+                ["RateLimiting:PublicReadPerMinute"] = "10000",
+                ["RateLimiting:PublicWritePerMinute"] = PublicWritePerMinute.ToString(),
+                ["RateLimiting:UploadsPerMinute"] = "10000",
+                ["PublicBooking:SiteUrl"] = BookingSite,
+                ["PublicBooking:AllowedOrigins:0"] = BookingSite,
+                ["PublicBooking:MaxActiveHoldsPerClient"] = "1000",
             });
         });
         builder.ConfigureServices(services =>
@@ -111,6 +164,8 @@ public class HmsApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IClock>(Clock);
             services.RemoveAll<IMalwareScanner>();
             services.AddSingleton<IMalwareScanner>(Scanner);
+            services.RemoveAll<IPaymentGateway>();
+            services.AddSingleton<IPaymentGateway>(Payments);
         });
     }
 
@@ -144,6 +199,11 @@ public class HmsApiFactory : WebApplicationFactory<Program>
             try { if (Directory.Exists(DataRoot)) Directory.Delete(DataRoot, recursive: true); } catch (IOException) { }
         }
     }
+}
+
+public sealed class StrictPublicRateLimitFactory : HmsApiFactory
+{
+    protected override int PublicWritePerMinute => 2;
 }
 
 public sealed class StrictRateLimitFactory : HmsApiFactory

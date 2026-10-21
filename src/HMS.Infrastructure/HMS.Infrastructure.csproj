@@ -14,6 +14,9 @@
     <PackageReference Include="MailKit" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="HMS.Infrastructure.IntegrationTests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\HMS.Application\HMS.Application.csproj" />
     <ProjectReference Include="..\HMS.Domain\HMS.Domain.csproj" />
   </ItemGroup>

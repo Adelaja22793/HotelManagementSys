@@ -6,6 +6,7 @@ using HMS.Application.Analytics;
 using HMS.Application.Billing;
 using HMS.Application.BusinessDay;
 using HMS.Application.Documents;
+using HMS.Application.PublicBooking;
 using HMS.Application.Notifications;
 using HMS.Application.SecurityOps;
 using HMS.Application.Cashier;
@@ -72,6 +73,11 @@ public static class DependencyInjection
         services.AddScoped<ISecurityService, SecurityService>();
         services.AddOptions<SecurityOptions>();
         services.AddOptions<DocumentOptions>();
+
+        // Phase 5: public booking
+        services.AddScoped<IPublicBookingService, PublicBookingService>();
+        services.AddScoped<IOnlinePaymentAdminService, OnlinePaymentAdminService>();
+        services.AddOptions<PublicBookingOptions>();
         return services;
     }
 }

@@ -25,6 +25,9 @@ public interface IPaymentService
     /// Records a payment inside the caller's transaction (cash and POS need an open shift and are
     /// confirmed with a receipt at once; bank transfers stay pending). Used by other modules such as the restaurant.
     /// </summary>
+    /// <summary>Records money already confirmed by the online payment provider (caller owns the transaction and has verified it).</summary>
+    Task<Payment> RecordOnlineAsync(BranchScope scope, Folio folio, decimal amount, string providerReference, string idempotencyKey, CancellationToken ct);
+
     Task<Payment> CollectAsync(BranchScope scope, Folio folio, TenderType tender, decimal amount, string idempotencyKey,
         string? externalReference, CancellationToken ct);
 }
@@ -73,6 +76,20 @@ internal sealed class PaymentService(
             return await ReplayAsync(winner, folioId, request.Amount, tender, ct);
         }
         return await ToDtoAsync(payment, ct);
+    }
+
+    public async Task<Payment> RecordOnlineAsync(BranchScope scope, Folio folio, decimal amount, string providerReference, string idempotencyKey,
+        CancellationToken ct)
+    {
+        db.RequireTransaction();
+        folio.EnsureOpen();
+        var payment = new Payment(scope.CompanyId, scope.BranchId, folio.Id, TenderType.Online, amount, folio.Currency, idempotencyKey,
+            scope.UserId, scope.UtcNow, providerReference);
+        payment.Confirm(scope.UserId, scope.UtcNow);
+        db.Payments.Add(payment);
+        db.Touch(folio);
+        await IssueReceiptAsync(scope, folio, payment, ct);
+        return payment;
     }
 
     public async Task<Payment> CollectAsync(BranchScope scope, Folio folio, TenderType tender, decimal amount, string idempotencyKey,

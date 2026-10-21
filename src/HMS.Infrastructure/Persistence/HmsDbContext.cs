@@ -104,6 +104,11 @@ public class HmsDbContext(DbContextOptions<HmsDbContext> options)
     public DbSet<GuestComplaint> GuestComplaints => Set<GuestComplaint>();
     public DbSet<EmergencyEvent> EmergencyEvents => Set<EmergencyEvent>();
     public DbSet<EmergencyAction> EmergencyActions => Set<EmergencyAction>();
+    public DbSet<BookingHold> BookingHolds => Set<BookingHold>();
+    public DbSet<BookingHoldRoom> BookingHoldRooms => Set<BookingHoldRoom>();
+    public DbSet<BookingPaymentAttempt> BookingPaymentAttempts => Set<BookingPaymentAttempt>();
+    public DbSet<BookingChannel> BookingChannels => Set<BookingChannel>();
+    public DbSet<ChannelReservationMapping> ChannelReservationMappings => Set<ChannelReservationMapping>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

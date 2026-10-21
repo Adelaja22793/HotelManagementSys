@@ -13,11 +13,13 @@ public static class NotificationEvents
     public const string MaintenanceAssigned = "MaintenanceAssigned";
     public const string ShiftVarianceDetected = "ShiftVarianceDetected";
     public const string DailyReportReady = "DailyReportReady";
+    public const string OnlinePaymentNeedsReview = "OnlinePaymentNeedsReview";
+    public const string CancellationRequested = "CancellationRequested";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
         ReservationConfirmed, GuestCheckedOut, PaymentConfirmed, RefundStatusChanged,
-        LowStockDetected, MaintenanceAssigned, ShiftVarianceDetected, DailyReportReady,
+        LowStockDetected, MaintenanceAssigned, ShiftVarianceDetected, DailyReportReady, OnlinePaymentNeedsReview, CancellationRequested,
     };
 }
 

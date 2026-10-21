@@ -152,3 +152,28 @@ public enum EmergencyStatus
     Active = 0,
     Ended = 1,
 }
+
+public enum BookingHoldStatus
+{
+    /// <summary>Rooms are held while the guest enters details and pays.</summary>
+    Active = 0,
+    /// <summary>Paid and turned into reservations.</summary>
+    Converted = 1,
+    /// <summary>Timed out; the rooms went back on sale.</summary>
+    Expired = 2,
+    /// <summary>The guest abandoned it; the rooms went back on sale.</summary>
+    Released = 3,
+    /// <summary>Money arrived but the booking could not be completed automatically. Staff must refund or rebook.</summary>
+    NeedsReview = 4,
+}
+
+public enum OnlinePaymentStatus
+{
+    Initialized = 0,
+    Succeeded = 1,
+    Failed = 2,
+    /// <summary>The provider reported a different amount, currency or reference, or the rooms were gone. Staff must act.</summary>
+    NeedsReview = 3,
+    /// <summary>Staff dealt with a payment that needed review (refunded or rebooked by hand).</summary>
+    Resolved = 4,
+}

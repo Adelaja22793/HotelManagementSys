@@ -2,7 +2,9 @@ using HMS.Application.Abstractions;
 using HMS.Application.Documents;
 using HMS.Application.Notifications;
 using HMS.Application.SecurityOps;
+using HMS.Application.PublicBooking;
 using HMS.Infrastructure.Documents;
+using HMS.Infrastructure.Payments;
 using HMS.Infrastructure.Notifications;
 using HMS.Infrastructure.Identity;
 using HMS.Infrastructure.Persistence;
@@ -60,6 +62,7 @@ public static class DependencyInjection
         // Documents: private storage, malware scanning and signature keys
         services.Configure<DocumentOptions>(configuration.GetSection(DocumentOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
+        services.Configure<PublicBookingOptions>(configuration.GetSection(PublicBookingOptions.SectionName));
         services.AddSingleton<IDocumentStorage, FileSystemDocumentStorage>();
         services.AddSingleton<IDocumentSigner, HmacDocumentSigner>();
         services.AddSingleton<ClamAvScanner>();
@@ -75,6 +78,12 @@ public static class DependencyInjection
         services.AddHttpClient<TermiiSmsSender>(c => c.Timeout = TimeSpan.FromSeconds(20));
         services.AddSingleton<INotificationSender, ConfiguredEmailSender>();
         services.AddScoped<INotificationSender, ConfiguredSmsSender>();
+
+        // Online payments for the public booking website.
+        services.Configure<PaystackOptions>(configuration.GetSection(PaystackOptions.SectionName));
+        services.AddHttpClient<PaystackGateway>(c => c.Timeout = TimeSpan.FromSeconds(20));
+        services.AddSingleton<SandboxPaymentGateway>();
+        services.AddScoped<IPaymentGateway, ConfiguredPaymentGateway>();
         return services;
     }
 }

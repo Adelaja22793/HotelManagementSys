@@ -41,6 +41,9 @@ public class Branch : AuditableEntity, IConcurrencyTracked
     /// <summary>The last business date closed by the night audit. The branch never operates on or before it again.</summary>
     public DateOnly? LastClosedBusinessDate { get; private set; }
 
+    /// <summary>When true the branch appears on the public booking website and accepts online bookings.</summary>
+    public bool PublicBookingEnabled { get; private set; }
+
     public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
 
     public void Update(string name, string timeZoneId, string currency, string? addressLine, string? city, string? phone)
@@ -55,6 +58,7 @@ public class Branch : AuditableEntity, IConcurrencyTracked
 
     public void SetBusinessDayCutoff(TimeOnly cutoffLocal) => BusinessDayCutoffLocal = cutoffLocal;
     public void SetHousekeepingInspection(bool required) => HousekeepingRequiresInspection = required;
+    public void SetPublicBooking(bool enabled) => PublicBookingEnabled = enabled;
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
 

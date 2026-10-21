@@ -21,6 +21,14 @@ public interface IRoomInventoryService
 
     Task ReleaseAsync(Guid branchId, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct);
 
+    /// <summary>Holds rooms for a website booking in progress (caller owns the transaction). Fails if any night is full.</summary>
+    Task HoldAsync(Branch branch, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct);
+
+    Task ReleaseHoldAsync(Guid branchId, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct);
+
+    /// <summary>Turns held rooms into confirmed rooms in one statement (caller owns the transaction).</summary>
+    Task ConvertHoldAsync(Guid branchId, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct);
+
     Task AdjustBlockedAsync(Branch branch, Guid roomTypeId, DateOnly start, DateOnly end, int delta, CancellationToken ct);
 
     Task RefreshPhysicalCountAsync(Guid branchId, Guid roomTypeId, CancellationToken ct);
@@ -117,6 +125,43 @@ internal sealed class RoomInventoryService(IApplicationDbContext db) : IRoomInve
                 .SetProperty(r => r.ConcurrencyStamp, Guid.NewGuid()), ct);
     }
 
+    public async Task HoldAsync(Branch branch, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct)
+    {
+        db.RequireTransaction();
+        var updated = await db.RoomNightInventory
+            .Where(r => r.BranchId == branch.Id && r.RoomTypeId == roomTypeId && r.Date >= start && r.Date < end)
+            .Where(r => (r.SellLimit != null && r.SellLimit < r.PhysicalCount - r.BlockedCount ? r.SellLimit.Value : r.PhysicalCount - r.BlockedCount)
+                        - r.ConfirmedCount - r.HeldCount >= quantity)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.HeldCount, r => r.HeldCount + quantity)
+                .SetProperty(r => r.ConcurrencyStamp, Guid.NewGuid()), ct);
+        if (updated != end.DayNumber - start.DayNumber)
+            throw new ConflictException("ROOM_NOT_AVAILABLE", "Sorry, that room type has just sold out for some of your nights.");
+    }
+
+    public async Task ReleaseHoldAsync(Guid branchId, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct)
+    {
+        if (end <= start) return;
+        await db.RoomNightInventory
+            .Where(r => r.BranchId == branchId && r.RoomTypeId == roomTypeId && r.Date >= start && r.Date < end && r.HeldCount >= quantity)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.HeldCount, r => r.HeldCount - quantity)
+                .SetProperty(r => r.ConcurrencyStamp, Guid.NewGuid()), ct);
+    }
+
+    public async Task ConvertHoldAsync(Guid branchId, Guid roomTypeId, DateOnly start, DateOnly end, int quantity, CancellationToken ct)
+    {
+        db.RequireTransaction();
+        var updated = await db.RoomNightInventory
+            .Where(r => r.BranchId == branchId && r.RoomTypeId == roomTypeId && r.Date >= start && r.Date < end && r.HeldCount >= quantity)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.HeldCount, r => r.HeldCount - quantity)
+                .SetProperty(r => r.ConfirmedCount, r => r.ConfirmedCount + quantity)
+                .SetProperty(r => r.ConcurrencyStamp, Guid.NewGuid()), ct);
+        if (updated != end.DayNumber - start.DayNumber)
+            throw new ConflictException("HOLD_INVENTORY_MISSING", "The held rooms were not found in inventory. Run an inventory reconcile.");
+    }
+
     public async Task AdjustBlockedAsync(Branch branch, Guid roomTypeId, DateOnly start, DateOnly end, int delta, CancellationToken ct)
     {
         await EnsureRowsAsync(branch, roomTypeId, start, end, ct);
@@ -185,6 +230,12 @@ internal sealed class RoomInventoryService(IApplicationDbContext db) : IRoomInve
                         && (r.Status == ReservationStatus.Confirmed || r.Status == ReservationStatus.CheckedIn))
             .Select(r => new { r.RoomTypeId, r.ArrivalDate, r.DepartureDate })
             .ToListAsync(ct);
+        var holds = await (
+                from r in db.BookingHoldRooms.AsNoTracking()
+                join h in db.BookingHolds.AsNoTracking() on r.HoldId equals h.Id
+                where h.BranchId == branch.Id && h.Status == BookingHoldStatus.Active && h.ArrivalDate < end && h.DepartureDate > start
+                select new { r.RoomTypeId, r.Quantity, h.ArrivalDate, h.DepartureDate })
+            .ToListAsync(ct);
 
         var corrections = new List<string>();
         foreach (var row in rows)
@@ -192,14 +243,17 @@ internal sealed class RoomInventoryService(IApplicationDbContext db) : IRoomInve
             var expectedPhysical = physical.GetValueOrDefault(row.RoomTypeId);
             var expectedBlocked = blocks.Count(b => b.RoomTypeId == row.RoomTypeId && b.StartDate <= row.Date && row.Date < b.EndDate);
             var expectedConfirmed = reservations.Count(r => r.RoomTypeId == row.RoomTypeId && r.ArrivalDate <= row.Date && row.Date < r.DepartureDate);
+            var expectedHeld = holds.Where(h => h.RoomTypeId == row.RoomTypeId && h.ArrivalDate <= row.Date && row.Date < h.DepartureDate).Sum(h => h.Quantity);
 
-            if (row.PhysicalCount != expectedPhysical || row.BlockedCount != expectedBlocked || row.ConfirmedCount != expectedConfirmed)
+            if (row.PhysicalCount != expectedPhysical || row.BlockedCount != expectedBlocked || row.ConfirmedCount != expectedConfirmed
+                || row.HeldCount != expectedHeld)
             {
                 corrections.Add($"{row.Date:yyyy-MM-dd} {row.RoomTypeId}: physical {row.PhysicalCount}->{expectedPhysical}, " +
-                                $"blocked {row.BlockedCount}->{expectedBlocked}, confirmed {row.ConfirmedCount}->{expectedConfirmed}");
+                                $"blocked {row.BlockedCount}->{expectedBlocked}, confirmed {row.ConfirmedCount}->{expectedConfirmed}, held {row.HeldCount}->{expectedHeld}");
                 row.PhysicalCount = expectedPhysical;
                 row.BlockedCount = expectedBlocked;
                 row.ConfirmedCount = expectedConfirmed;
+                row.HeldCount = expectedHeld;
             }
         }
         await db.SaveChangesAsync(ct);

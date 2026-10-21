@@ -1,7 +1,9 @@
 using HMS.Application.Documents;
 using HMS.Application.Notifications;
+using HMS.Application.PublicBooking;
 using HMS.Contracts.Documents;
 using HMS.Contracts.Notifications;
+using HMS.Contracts.PublicBooking;
 
 namespace HMS.Api.Services;
 
@@ -14,7 +16,7 @@ public sealed class BackgroundJobsOptions
     public int ScanBatchSize { get; set; } = 10;
 }
 
-public sealed record JobRunResult(DispatchResultDto Notifications, ScanRunResultDto Scans);
+public sealed record JobRunResult(DispatchResultDto Notifications, ScanRunResultDto Scans, HoldExpiryResultDto Holds);
 
 /// <summary>Runs one round of the periodic jobs. Each job gets its own scope so a failure in one never blocks the other.</summary>
 public sealed class BackgroundJobRunner(IServiceScopeFactory scopes, Microsoft.Extensions.Options.IOptions<BackgroundJobsOptions> options)
@@ -28,12 +30,15 @@ public sealed class BackgroundJobRunner(IServiceScopeFactory scopes, Microsoft.E
         ScanRunResultDto scanned;
         await using (var scope = scopes.CreateAsyncScope())
             scanned = await scope.ServiceProvider.GetRequiredService<IDocumentScanProcessor>().ProcessPendingAsync(settings.ScanBatchSize, ct);
-        return new JobRunResult(sent, scanned);
+        HoldExpiryResultDto holds;
+        await using (var scope = scopes.CreateAsyncScope())
+            holds = await scope.ServiceProvider.GetRequiredService<IPublicBookingService>().ExpireDueAsync(100, ct);
+        return new JobRunResult(sent, scanned, holds);
     }
 }
 
 /// <summary>
-/// Sends queued notifications and scans uploaded documents. Safe to run on several API instances: both jobs claim
+/// Sends queued notifications, scans uploaded documents and releases expired website holds. Safe to run on several API instances: both jobs claim
 /// work with database leases.
 /// </summary>
 public sealed class BackgroundJobsWorker(
@@ -55,9 +60,9 @@ public sealed class BackgroundJobsWorker(
             try
             {
                 var result = await runner.RunOnceAsync(stoppingToken);
-                if (result.Notifications.Claimed > 0 || result.Scans.Scanned > 0)
-                    logger.LogInformation("Background jobs: {Sent} sent, {Failed} failed, {Retrying} retrying; {Scanned} files scanned",
-                        result.Notifications.Sent, result.Notifications.Failed, result.Notifications.Retrying, result.Scans.Scanned);
+                if (result.Notifications.Claimed > 0 || result.Scans.Scanned > 0 || result.Holds.Expired > 0)
+                    logger.LogInformation("Background jobs: {Sent} sent, {Failed} failed, {Retrying} retrying; {Scanned} files scanned; {Expired} holds expired",
+                        result.Notifications.Sent, result.Notifications.Failed, result.Notifications.Retrying, result.Scans.Scanned, result.Holds.Expired);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
