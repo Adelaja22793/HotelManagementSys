@@ -33,6 +33,7 @@ public partial class App : Application
                     client.BaseAddress = new Uri(baseUrl);
                     client.Timeout = TimeSpan.FromSeconds(context.Configuration.GetValue("Api:TimeoutSeconds", 30));
                 });
+                services.AddSingleton(context.Configuration.GetSection("Updates").Get<DesktopUpdateOptions>() ?? new DesktopUpdateOptions());
                 services.AddHttpClient<UpdateService>(client => client.Timeout = TimeSpan.FromMinutes(10));
                 services.AddTransient<LoginViewModel>();
                 services.AddTransient<ShellViewModel>();

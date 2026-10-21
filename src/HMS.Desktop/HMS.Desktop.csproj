@@ -5,13 +5,11 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HMS.Contracts\HMS.Contracts.csproj" />
-    <ProjectReference Include="..\HMS.Updater\HMS.Updater.csproj" />
+    <ProjectReference Include="..\HMS.Desktop.Core\HMS.Desktop.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />

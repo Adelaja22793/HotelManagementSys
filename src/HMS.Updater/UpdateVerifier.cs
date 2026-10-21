@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace HMS.Updater;
 
-public sealed class UpdaterOptions
+public class UpdaterOptions
 {
     /// <summary>Public keys (PEM, ECDSA P-256) by key id. Shipped with the app; more than one allows key rotation.</summary>
     public Dictionary<string, string> TrustedKeys { get; set; } = new(StringComparer.Ordinal);

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- View models and the API client, kept free of WPF so they are tested on any CI agent. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>HMS.Desktop</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HMS.Contracts\HMS.Contracts.csproj" />
+    <ProjectReference Include="..\HMS.Updater\HMS.Updater.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="HMS.Desktop" />
+    <InternalsVisibleTo Include="HMS.Desktop.Tests" />
+  </ItemGroup>
+</Project>

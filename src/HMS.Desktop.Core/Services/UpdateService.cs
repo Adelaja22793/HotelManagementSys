@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using HMS.Updater;
-using Microsoft.Extensions.Configuration;
 
 namespace HMS.Desktop.Services;
 
@@ -11,9 +10,14 @@ namespace HMS.Desktop.Services;
 /// version. Switching happens only when the user agrees, through the launcher, so a bad download never replaces a
 /// working install. Does nothing unless Updates:ManifestUrl is set and the app runs from a launcher install.
 /// </summary>
-public sealed class UpdateService(HttpClient http, IConfiguration configuration)
+public sealed class DesktopUpdateOptions : UpdaterOptions
 {
-    private readonly UpdaterOptions _options = configuration.GetSection("Updates").Get<UpdaterOptions>() ?? new UpdaterOptions();
+    public string? ManifestUrl { get; set; }
+}
+
+public sealed class UpdateService(HttpClient http, DesktopUpdateOptions options)
+{
+    private readonly DesktopUpdateOptions _options = options;
 
     /// <summary>The install root when this copy runs from <c>{root}/versions/{version}/</c>; otherwise null.</summary>
     public static string? InstallRoot()
@@ -24,7 +28,7 @@ public sealed class UpdateService(HttpClient http, IConfiguration configuration)
 
     public async Task<UpdateManifest?> CheckAndStageAsync(CancellationToken ct)
     {
-        var manifestUrl = configuration["Updates:ManifestUrl"];
+        var manifestUrl = _options.ManifestUrl;
         var root = InstallRoot();
         if (string.IsNullOrWhiteSpace(manifestUrl) || root is null) return null;
         if (!manifestUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) throw new UpdateRejectedException("Updates:ManifestUrl must use HTTPS.");
