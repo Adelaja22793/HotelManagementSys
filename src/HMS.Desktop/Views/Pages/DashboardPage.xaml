@@ -6,10 +6,10 @@
             <StackPanel Visibility="{Binding CanSeeFrontDesk, Converter={StaticResource BoolToVis}}">
                 <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding Today.BusinessDate, Converter={StaticResource DateOnly}, StringFormat=Business date {0}}" />
                 <WrapPanel>
-                    <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Arrivals" />
-                        <TextBlock FontSize="20"><Run Text="{Binding Today.ArrivalsCheckedIn, Mode=OneWay}" /> / <Run Text="{Binding Today.ArrivalsExpected, Mode=OneWay}" /></TextBlock></StackPanel></Border>
-                    <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Departures" />
-                        <TextBlock FontSize="20"><Run Text="{Binding Today.DeparturesCheckedOut, Mode=OneWay}" /> / <Run Text="{Binding Today.DeparturesExpected, Mode=OneWay}" /></TextBlock></StackPanel></Border>
+                    <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Arrivals checked in" />
+                        <TextBlock FontSize="20" Text="{Binding ArrivalsToday}" /></StackPanel></Border>
+                    <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Departures checked out" />
+                        <TextBlock FontSize="20" Text="{Binding DeparturesToday}" /></StackPanel></Border>
                     <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="In house" />
                         <TextBlock FontSize="20" Text="{Binding Today.InHouse}" /></StackPanel></Border>
                     <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Vacant clean" />
