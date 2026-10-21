@@ -15,6 +15,10 @@
     <ProjectReference Include="..\..\src\HMS.Api\HMS.Api.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="HMS.SecurityTests" />
+    <InternalsVisibleTo Include="HMS.PerformanceTests" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

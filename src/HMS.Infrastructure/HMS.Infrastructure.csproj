@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="HMS.Infrastructure.IntegrationTests" />
+    <InternalsVisibleTo Include="HMS.SecurityTests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HMS.Application\HMS.Application.csproj" />

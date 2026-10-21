@@ -128,6 +128,7 @@ internal sealed class IdentityService(
             .Require(nameof(request.TemporaryPassword), request.TemporaryPassword, 128);
         ValidateRoles(validation, request.Roles);
         validation.ThrowIfInvalid();
+        EnsureCanGrant(request.Roles);
 
         await ValidateBranchesAsync(companyId, request.BranchIds, request.DefaultBranchId, cancellationToken);
 
@@ -171,6 +172,8 @@ internal sealed class IdentityService(
 
         await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
         var currentRoles = await userManager.GetRolesAsync(user);
+        EnsureCanGrant(request.Roles);
+        EnsureCanGrant(currentRoles);
         var toRemove = currentRoles.Except(request.Roles).ToArray();
         var toAdd = request.Roles.Distinct().Except(currentRoles).ToArray();
         if (toRemove.Length > 0) ThrowIfFailed(await userManager.RemoveFromRolesAsync(user, toRemove), nameof(request.Roles));
@@ -265,6 +268,12 @@ internal sealed class IdentityService(
             .When(found != ids.Count, "BranchIds", "One or more branches do not exist in your company.")
             .When(defaultBranchId is { } d && !ids.Contains(d), "DefaultBranchId", "Default branch must be one of the assigned branches.");
         validation.ThrowIfInvalid();
+    }
+
+    private void EnsureCanGrant(IEnumerable<string> roles)
+    {
+        if (!RolePermissions.CanGrant(currentUser.Roles, roles))
+            throw new ForbiddenException("ROLE_GRANT_FORBIDDEN", "You cannot give or change access beyond your own.");
     }
 
     private static void ValidateRoles(Validation validation, IReadOnlyList<string>? roles)

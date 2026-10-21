@@ -70,4 +70,14 @@ public static class RolePermissions
 
     public static bool HasPermission(IEnumerable<string> roles, string permission) =>
         roles.Any(r => For(r).Contains(permission));
+
+    /// <summary>
+    /// True when every permission the <paramref name="target"/> roles carry is one the caller already holds.
+    /// Stops someone who can manage users from handing out (or editing an account with) more access than they have.
+    /// </summary>
+    public static bool CanGrant(IEnumerable<string> callerRoles, IEnumerable<string> target)
+    {
+        var held = ForRoles(callerRoles).ToHashSet(StringComparer.Ordinal);
+        return target.SelectMany(For).All(held.Contains);
+    }
 }

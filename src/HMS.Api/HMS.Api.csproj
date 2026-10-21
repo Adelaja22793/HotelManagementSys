@@ -16,5 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="HMS.Api.IntegrationTests" />
+    <InternalsVisibleTo Include="HMS.SecurityTests" />
+    <InternalsVisibleTo Include="HMS.PerformanceTests" />
   </ItemGroup>
 </Project>

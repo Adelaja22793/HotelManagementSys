@@ -57,6 +57,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             ValidAudience = settings.Audience,
             IssuerSigningKey = TokenService.GetSigningKey(settings),
             ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
             RoleClaimType = ClaimTypes.Role,
