@@ -13,6 +13,8 @@ public sealed partial class StaffPageViewModel(ApiClient api, SessionState sessi
 
     public override string Title => "Staff and rosters";
 
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Staff;
+
     public ObservableCollection<DepartmentDto> Departments { get; } = [];
     public ObservableCollection<EmployeeDto> Employees { get; } = [];
     public ObservableCollection<WorkShiftDto> Shifts { get; } = [];

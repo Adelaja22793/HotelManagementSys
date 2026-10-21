@@ -56,6 +56,51 @@
                     <TextBlock Text="{Binding StatusMessage}" Foreground="#05400A" TextWrapping="Wrap" />
                 </Border>
             </StackPanel>
+            <!-- The screen's tasks: each button opens its form on the right. -->
+            <ItemsControl DockPanel.Dock="Top" DataContext="{Binding CurrentPage}" ItemsSource="{Binding Actions}" Margin="0,10,0,0" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding Title}" Margin="0,0,8,6"
+                                Command="{Binding DataContext.OpenActionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border DockPanel.Dock="Right" Width="360" Margin="12,12,0,0" Padding="14" Background="#F5F7FA" CornerRadius="4"
+                    DataContext="{Binding CurrentPage}" Visibility="{Binding IsActionOpen, Converter={StaticResource BoolToVis}}">
+                <DockPanel DataContext="{Binding OpenAction}">
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Style="{StaticResource SectionTitle}" TextWrapping="Wrap" />
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding Description}" Foreground="#52606D" TextWrapping="Wrap" Margin="0,0,0,10"
+                               Visibility="{Binding Description, Converter={StaticResource NotNullToVis}}" />
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <TextBlock Text="{Binding Error}" Foreground="#8A1C1C" TextWrapping="Wrap" Margin="0,0,0,8"
+                                   Visibility="{Binding Error, Converter={StaticResource NotNullToVis}}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Save" IsDefault="True"
+                                    Command="{Binding DataContext.SubmitActionCommand, RelativeSource={RelativeSource AncestorType=Border}}" />
+                            <Button Content="Cancel"
+                                    Command="{Binding DataContext.CloseActionCommand, RelativeSource={RelativeSource AncestorType=Border}}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Fields}" Focusable="False" />
+                            <StackPanel Visibility="{Binding HasLines, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{Binding LinesTitle}" Style="{StaticResource SectionTitle}" />
+                                <ItemsControl ItemsSource="{Binding LineFields}" Focusable="False" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Button Content="Add line" Command="{Binding AddLineCommand}" />
+                                    <Button Content="Remove line" Command="{Binding RemoveLineCommand}" />
+                                </StackPanel>
+                                <ListBox ItemsSource="{Binding Lines}" SelectedItem="{Binding SelectedLine}" DisplayMemberPath="Label" MinHeight="40" MaxHeight="160" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
             <ContentControl Content="{Binding CurrentPage}" Margin="0,12,0,0" Focusable="False" />
         </DockPanel>
     </DockPanel>

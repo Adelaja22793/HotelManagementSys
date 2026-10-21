@@ -11,6 +11,7 @@ namespace HMS.Desktop.ViewModels;
 public sealed partial class InventoryPageViewModel(ApiClient api, SessionState session, IDialogService dialogs) : PageViewModel
 {
     public override string Title => "Inventory and purchasing";
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Inventory;
 
     public ObservableCollection<StockBalanceDto> Balances { get; } = [];
     public ObservableCollection<StockMovementDto> Movements { get; } = [];

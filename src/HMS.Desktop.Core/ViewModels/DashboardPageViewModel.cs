@@ -9,6 +9,7 @@ namespace HMS.Desktop.ViewModels;
 public sealed partial class DashboardPageViewModel(ApiClient api, SessionState session) : PageViewModel
 {
     public override string Title => "Dashboard";
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Account;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ArrivalsToday), nameof(DeparturesToday))]

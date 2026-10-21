@@ -1,0 +1,69 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.SetupPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="GroupedEntities" Source="{Binding Entities}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Group" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- What to set up -->
+        <ListBox Grid.Column="0" ItemsSource="{Binding Source={StaticResource GroupedEntities}}" SelectedItem="{Binding SelectedEntity}"
+                 DisplayMemberPath="Title" BorderThickness="0,0,1,0" BorderBrush="#E4E7EB" Margin="0,0,12,0">
+            <ListBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#52606D" Margin="4,10,0,2" />
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListBox.GroupStyle>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="12,4" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+
+        <!-- The records -->
+        <DockPanel Grid.Column="1">
+            <TextBlock DockPanel.Dock="Top" Text="{Binding SelectedEntity.Title}" Style="{StaticResource SectionTitle}" />
+            <TextBlock DockPanel.Dock="Top" Text="{Binding SelectedEntity.Description}" TextWrapping="Wrap" Foreground="#52606D" Margin="0,0,0,8" />
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,4">
+                <StackPanel Orientation="Horizontal" Visibility="{Binding HasParent, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding ParentTitle}" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox Width="220" ItemsSource="{Binding ParentOptions}" SelectedItem="{Binding SelectedParent}" Margin="0,0,12,0" />
+                </StackPanel>
+                <Button Content="New" Command="{Binding NewCommand}" />
+                <TextBlock Text="{Binding ReadOnlyNote}" Foreground="#52606D" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Bottom" Text="Select a row to change it." Foreground="#7B8794" Margin="0,4,0,0" />
+            <DataGrid x:Name="RecordsGrid" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" />
+        </DockPanel>
+
+        <!-- The form -->
+        <Border Grid.Column="2" Width="340" Margin="12,0,0,0" Padding="14" Background="#F5F7FA" CornerRadius="4"
+                Visibility="{Binding IsFormOpen, Converter={StaticResource BoolToVis}}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding FormTitle}" Style="{StaticResource SectionTitle}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button Content="Save" Command="{Binding SaveCommand}" IsDefault="True" />
+                    <Button Content="Cancel" Command="{Binding CloseFormCommand}" />
+                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Form}" Focusable="False">
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

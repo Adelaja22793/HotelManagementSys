@@ -199,7 +199,7 @@ public sealed class ScreenFlowTests(HmsApiFactory factory) : IClassFixture<HmsAp
         var hotel = await HotelSetup.CreateAsync(factory, roomCount: 1);
         var desk = await SignInAsync(hotel, HmsApiFactory.AdminEmail, HmsApiFactory.AdminPassword);
         var shell = new ShellViewModel(desk.Api, desk.Session, desk.Navigation);
-        Assert.Equal(18, shell.Modules.Count);
+        Assert.Equal(19, shell.Modules.Count);
         Assert.All(shell.Modules, m => Assert.True(m.IsAvailable, m.Title));
         Assert.All(shell.Modules, m => Assert.True(typeof(PageViewModel).IsAssignableFrom(m.PageType), m.Title));
     }

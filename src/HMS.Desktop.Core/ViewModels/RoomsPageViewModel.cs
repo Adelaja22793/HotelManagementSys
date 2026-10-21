@@ -13,6 +13,8 @@ public sealed partial class RoomsPageViewModel(ApiClient api) : PageViewModel
 
     public override string Title => "Rooms and rates";
 
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Rooms;
+
     public ObservableCollection<RoomDto> Rooms { get; } = [];
     public ObservableCollection<RoomTypeDto> RoomTypes { get; } = [];
     public ObservableCollection<RatePlanDto> RatePlans { get; } = [];

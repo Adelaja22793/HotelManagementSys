@@ -9,6 +9,7 @@ namespace HMS.Desktop.ViewModels;
 public sealed partial class CashierPageViewModel(ApiClient api, IDialogService dialogs) : PageViewModel
 {
     public override string Title => "Cashier shift";
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Cashier;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasOpenShift))]

@@ -40,6 +40,15 @@ public sealed class ApiClient(HttpClient http, SessionState session)
     public Task<T> PutAsync<T>(string path, object body, CancellationToken ct = default) =>
         SendAsync<T>(HttpMethod.Put, path, body, true, ct);
 
+    /// <summary>Reads a list of <paramref name="itemType"/> records, or a single record wrapped in a list.</summary>
+    public async Task<IReadOnlyList<object>> GetListAsync(string path, Type itemType, bool single = false, CancellationToken ct = default)
+    {
+        var element = await SendAsync<System.Text.Json.JsonElement>(HttpMethod.Get, path, null, true, ct);
+        var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        if (single) return [System.Text.Json.JsonSerializer.Deserialize(element, itemType, options)!];
+        return [.. element.EnumerateArray().Select(e => System.Text.Json.JsonSerializer.Deserialize(e, itemType, options)!)];
+    }
+
     public Task DeleteAsync(string path, CancellationToken ct = default) =>
         SendAsync<object?>(HttpMethod.Delete, path, null, true, ct);
 
