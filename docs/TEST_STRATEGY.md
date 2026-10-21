@@ -6,7 +6,10 @@
 | `HMS.Application.UnitTests` | SQLite in-memory (real SQL) | branch access rules, auditing, permission map |
 | `HMS.Api.IntegrationTests` | full HTTP pipeline on SQLite, or SQL Server when `HMS_SQLSERVER_TEST_CONNECTION` is set | auth, refresh rotation, cross-branch denial, error contract, rate limit, and the full booking → check-in → payment → check-out → housekeeping flow, refunds, cashier variance, early departure, seasonal rates; phase 3 procure-to-pay with a price discrepancy, walk-in and room-charge restaurant orders, stock costing, work orders that block rooms, roster rules, attendance, manual journals and period close, each checked against the trial balance |
 | `HMS.Infrastructure.IntegrationTests` | **real SQL Server** | migrations, unique constraints, concurrency tokens |
+| `HMS.SecurityTests` | full HTTP pipeline (SQLite or SQL Server) and plain .NET | endpoint permission inventory, cross-branch sweep of every branch route, forged tokens, privilege escalation, document storage paths, desktop updater signatures and extraction |
+| `HMS.PerformanceTests` | **SQL Server only** | p95 of login, availability, guest search, booking, folio and dashboard against the blueprint targets; a burst of bookings for the last rooms; a 20-second mixed workload |
 | `HMS.Desktop.Tests` | Windows | ViewModels and API client behaviour |
+| `booking-web` (Vitest) | jsdom | search and guest validation, token storage, the search → hold → guest → payment → confirmation flow with a mocked API |
 
 SQLite is used only where provider behaviour does not matter. Locking, unique-index races and
 transaction behaviour (for example the "two bookings for the last room" test in phase 2) must be
@@ -29,3 +32,26 @@ reject an infected file, keep files quarantined during a scanner outage, hide re
 incidents, lost property, complaints and visitors through their rules. A fake scanner flags any file containing
 `EICAR-TEST`, and background jobs are run on demand through `/system/jobs/run`. Unit tests cover the file-type
 rules and CSV escaping.
+
+Phase 5 tests (`PublicBookingTests`) take a booking through hold, guest details, payment and confirmation, check
+held rooms block both the website and the front desk, expire holds, rebook a payment that arrives after expiry,
+send it to review when the rooms are gone, reject a wrong amount or a bad webhook signature, and race two
+customers for the last room on SQL Server. `RestoreTests` back up the test database with checksums, restore it
+under a new name beside a copy of the documents, open the API on the copy and require the restore check to pass
+with identical row counts; a deleted file and a stray file are both reported.
+
+Last local run of `HMS.PerformanceTests` (in-process host, SQL Server 2022 in Docker, so a floor rather than a
+production benchmark):
+
+| Operation | p95 | Target |
+| --- | ---: | ---: |
+| Login | 107 ms | 1 s |
+| Room availability search | 17 ms | 1 s |
+| Guest search | 12 ms | 750 ms |
+| Reservation creation | 41 ms | 2 s |
+| Folio and payment history | 15 ms | 1 s |
+| Standard dashboard | 9 ms | 2 s |
+
+25 parallel bookings for 3 rooms created exactly 3 with no server errors. 8 workers for 20 seconds made 3,118
+requests (p95 170 ms) with no errors. Repeat the run on the production hardware with production-sized data before
+go-live.

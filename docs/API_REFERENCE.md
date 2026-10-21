@@ -121,3 +121,40 @@ Phase 4 error codes: `BUSINESS_DATE_MISMATCH`, `BUSINESS_DAY_NOT_STARTED`, `BUSI
 `APPROVAL_STATE`, `SELF_APPROVAL`, `LEGAL_HOLD`, `RETENTION_ACTIVE`, `CASE_STATE`, `CASE_CLOSED`, `HOLD_PERIOD`,
 `ITEM_RELEASED`, `VISITOR_LEFT`, `EMERGENCY_ENDED`. Two requests racing on a unique index now return 409
 `CONCURRENCY_CONFLICT` instead of 500.
+
+## Public booking (phase 5)
+
+Anonymous routes for the booking website under `/api/v1/public`. They are rate limited per client address
+(`RateLimiting:PublicReadPerMinute`, default 60; `PublicWritePerMinute`, default 10) and allow cross-origin calls only
+from `PublicBooking:AllowedOrigins`. Only branches with public booking turned on are visible.
+
+| Method | Route | Notes |
+| --- | --- | --- |
+| GET | `/public/branches` | bookable branches: code, name, currency |
+| GET | `/public/branches/{code}/availability?arrival&departure&adults&children` | room types with a price quote; availability is capped at 5 so exact stock is not revealed |
+| POST | `/public/branches/{code}/holds` | dates and up to 4 rooms → hold with `reference` and a one-time `accessToken`; rooms are held for `PublicBooking:HoldMinutes` (15) |
+| GET | `/public/holds/{reference}` | needs `X-Booking-Token` |
+| PUT | `/public/holds/{reference}/guest` | guest name, email, phone, requests; a filled `website` field (honeypot) is silently ignored |
+| DELETE | `/public/holds/{reference}` | releases the rooms |
+| POST | `/public/holds/{reference}/payments` | starts a Paystack payment and returns the checkout URL. The hold is extended once while payment is under way |
+| POST | `/public/payments/{merchantReference}/verify` | asks Paystack for the result; confirms the booking when amount, currency and reference all match |
+| POST | `/public/payments/paystack/webhook` | Paystack server-to-server event; signature checked with HMAC-SHA512, body limit 64 KB, no CORS |
+| GET | `/public/bookings/{reference}` | confirmed booking with its reservations; needs `X-Booking-Token` |
+| POST | `/public/bookings/{reference}/cancellation-request` | records the request and notifies staff; staff cancel through the normal reservation routes |
+
+A wrong token and an unknown reference both return 404. A payment that arrives after the hold expired books the
+rooms again if they are still free; otherwise it is marked for review and staff are notified.
+
+Staff routes:
+
+| Method | Route | Permission |
+| --- | --- | --- |
+| PUT | `/branches/{branchId}/public-booking` | `branches.manage`; `{ enabled }` |
+| GET | `/branches/{branchId}/online-payments?status` | `payments.verify` |
+| POST | `/branches/{branchId}/online-payments/{paymentId}/resolve` | `refunds.approve`; a note is required |
+| GET | `/system/restore-check?checksums=true` | `system.manage`; see [Backup and recovery](BACKUP_AND_RECOVERY.md) |
+
+Phase 5 error codes: `TOO_MANY_HOLDS` (429), `TOO_MANY_ROOMS`, `QUANTITY_INVALID`, `REQUESTS_TOO_LONG`,
+`FIRST_NAME_REQUIRED`, `LAST_NAME_REQUIRED`, `EMAIL_REQUIRED`, `NOTE_REQUIRED` (400), `HOLD_EXPIRED`, `HOLD_NOT_ACTIVE`,
+`GUEST_DETAILS_REQUIRED`, `PAYMENT_IN_PROGRESS`, `PAYMENT_STATE`, `BOOKING_NOT_CONFIRMED`, `ROOM_NOT_AVAILABLE`,
+`HOLD_INVENTORY_MISSING` (409), `PAYMENT_UNAVAILABLE` (503), `ROLE_GRANT_FORBIDDEN` (403, granting access you do not hold).
