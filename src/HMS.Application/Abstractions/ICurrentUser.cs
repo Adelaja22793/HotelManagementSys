@@ -8,5 +8,7 @@ public interface ICurrentUser
     Guid? CompanyId { get; }
     IReadOnlyCollection<string> Roles { get; }
     string? TraceId { get; }
+    /// <summary>The user's full name from the token, for display and signatures.</summary>
+    string? DisplayName => null;
     bool IsInRole(string role);
 }

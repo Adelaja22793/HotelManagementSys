@@ -1,0 +1,122 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.AccountingPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <DockPanel>
+        <WrapPanel DockPanel.Dock="Top">
+            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="From" /><DatePicker SelectedDate="{Binding From}" /></StackPanel>
+            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="To" /><DatePicker SelectedDate="{Binding To}" /></StackPanel>
+            <CheckBox Content="All branches of the company" IsChecked="{Binding Consolidated}" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <Button Content="Show" Command="{Binding ShowCommand}" VerticalAlignment="Center" />
+        </WrapPanel>
+        <TabControl>
+            <TabItem Header="Trial balance">
+                <DockPanel Margin="8">
+                    <TextBlock DockPanel.Dock="Bottom" FontWeight="SemiBold">
+                        <Run Text="Total debit" /> <Run Text="{Binding TotalDebit, Mode=OneWay, StringFormat=N2}" /> <Run Text="· Total credit" /> <Run Text="{Binding TotalCredit, Mode=OneWay, StringFormat=N2}" />
+                    </TextBlock>
+                    <DataGrid ItemsSource="{Binding TrialBalance}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Code" Binding="{Binding Code}" />
+                            <DataGridTextColumn Header="Account" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="Type" Binding="{Binding Type}" />
+                            <DataGridTextColumn Header="Debit" Binding="{Binding Debit, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Credit" Binding="{Binding Credit, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Balance" Binding="{Binding Balance, StringFormat=N2}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Ledger">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Account" /><ComboBox Width="300" ItemsSource="{Binding Accounts}" SelectedItem="{Binding LedgerAccount}"><ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding Code, Mode=OneWay}" /> <Run Text="{Binding Name, Mode=OneWay}" /></TextBlock></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding Ledger}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding EntryDate, Converter={StaticResource DateOnly}}" />
+                            <DataGridTextColumn Header="Entry" Binding="{Binding EntryNumber}" />
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="Debit" Binding="{Binding Debit, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Credit" Binding="{Binding Credit, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Balance" Binding="{Binding RunningBalance, StringFormat=N2}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Journals">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding CanPost, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Reason for reversing" /><TextBox Width="280" Text="{Binding ReverseReason, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <Button Content="Reverse journal" Command="{Binding ReverseCommand}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <DataGrid DockPanel.Dock="Bottom" Height="130" ItemsSource="{Binding SelectedJournal.Lines}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Code" Binding="{Binding AccountCode}" />
+                            <DataGridTextColumn Header="Account" Binding="{Binding AccountName}" Width="*" />
+                            <DataGridTextColumn Header="Debit" Binding="{Binding Debit, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Credit" Binding="{Binding Credit, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Memo" Binding="{Binding Memo}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <DataGrid ItemsSource="{Binding Journals}" SelectedItem="{Binding SelectedJournal}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Entry" Binding="{Binding EntryNumber}" />
+                            <DataGridTextColumn Header="Date" Binding="{Binding EntryDate, Converter={StaticResource DateOnly}}" />
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="Source" Binding="{Binding SourceType}" />
+                            <DataGridTextColumn Header="Amount" Binding="{Binding TotalDebit, StringFormat=N2}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="New journal" Visibility="{Binding CanPost, Converter={StaticResource BoolToVis}}">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Date" /><DatePicker SelectedDate="{Binding EntryDate}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Description" /><TextBox Width="360" Text="{Binding EntryDescription, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                        <Button Content="Add line" Command="{Binding AddLineCommand}" />
+                        <Button Content="Post journal" Command="{Binding PostJournalCommand}" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding DraftLines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox Width="280" Margin="0,2,8,2" SelectedItem="{Binding Account}"
+                                              ItemsSource="{Binding DataContext.Accounts, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding Code, Mode=OneWay}" /> <Run Text="{Binding Name, Mode=OneWay}" /></TextBlock></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBox Width="110" Margin="0,2,8,2" Text="{Binding Debit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Debit" />
+                                    <TextBox Width="110" Margin="0,2,8,2" Text="{Binding Credit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Credit" />
+                                    <TextBox Width="200" Margin="0,2,8,2" Text="{Binding Memo, UpdateSourceTrigger=PropertyChanged}" ToolTip="Memo" />
+                                    <Button Content="Remove" MinWidth="0" Margin="0,2"
+                                            Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </TabItem>
+            <TabItem Header="Periods">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding CanManage, Converter={StaticResource BoolToVis}}">
+                        <Button Content="Close period" Command="{Binding ClosePeriodCommand}" />
+                        <Button Content="Reopen period" Command="{Binding ReopenPeriodCommand}" />
+                    </StackPanel>
+                    <DataGrid ItemsSource="{Binding Periods}" SelectedItem="{Binding SelectedPeriod}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Year" Binding="{Binding Year}" />
+                            <DataGridTextColumn Header="Month" Binding="{Binding Month}" />
+                            <DataGridTextColumn Header="From" Binding="{Binding StartDate, Converter={StaticResource DateOnly}}" />
+                            <DataGridTextColumn Header="To" Binding="{Binding EndDate, Converter={StaticResource DateOnly}}" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                            <DataGridTextColumn Header="Closed (UTC)" Binding="{Binding ClosedAtUtc, StringFormat=g}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</UserControl>

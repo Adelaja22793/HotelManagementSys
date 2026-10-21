@@ -20,7 +20,8 @@ internal sealed class BranchService(
     IApplicationDbContext db,
     ICurrentUser currentUser,
     IBranchAccessService branchAccess,
-    IClock clock) : IBranchService
+    IClock clock,
+    INumberSequence numbers) : IBranchService
 {
     public async Task<IReadOnlyList<BranchSummaryDto>> GetMyBranchesAsync(CancellationToken cancellationToken = default)
     {
@@ -57,6 +58,7 @@ internal sealed class BranchService(
         var branch = new Branch(companyId, request.Name, code, request.TimeZoneId ?? Branch.DefaultTimeZoneId, request.Currency);
         branch.Update(branch.Name, branch.TimeZoneId, branch.Currency, request.AddressLine, request.City, request.Phone);
         db.Branches.Add(branch);
+        await numbers.EnsureCountersAsync(branch.Id, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return ToDto(branch);
     }
@@ -75,6 +77,7 @@ internal sealed class BranchService(
 
         branch.Update(request.Name, request.TimeZoneId, request.Currency, request.AddressLine, request.City, request.Phone);
         if (request.BusinessDayCutoffLocal is { } cutoff) branch.SetBusinessDayCutoff(cutoff);
+        if (request.HousekeepingRequiresInspection is { } inspect) branch.SetHousekeepingInspection(inspect);
         if (request.IsActive) branch.Activate(); else branch.Deactivate();
 
         await db.SaveChangesAsync(cancellationToken);
@@ -86,5 +89,5 @@ internal sealed class BranchService(
 
     private BranchDto ToDto(Branch b) => new(
         b.Id, b.CompanyId, b.Code, b.Name, b.TimeZoneId, b.Currency, b.AddressLine, b.City, b.Phone,
-        b.BusinessDayCutoffLocal, b.GetBusinessDate(clock.UtcNow), b.IsActive, b.ConcurrencyStamp);
+        b.BusinessDayCutoffLocal, b.GetBusinessDate(clock.UtcNow), b.HousekeepingRequiresInspection, b.IsActive, b.ConcurrencyStamp);
 }

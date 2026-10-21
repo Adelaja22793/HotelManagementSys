@@ -1,0 +1,128 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.ReservationsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <TabControl>
+        <TabItem Header="Find">
+            <Grid Margin="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+                <DockPanel>
+                    <WrapPanel DockPanel.Dock="Top">
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Name, number, email or phone" />
+                            <TextBox Width="220" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Status" />
+                            <ComboBox Width="120" ItemsSource="{x:Static vm:ReservationsPageViewModel.Statuses}" SelectedItem="{Binding Status}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Arriving from" />
+                            <DatePicker SelectedDate="{Binding ArrivalFrom}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="to" />
+                            <DatePicker SelectedDate="{Binding ArrivalTo}" /></StackPanel>
+                        <Button Content="Search" Command="{Binding SearchCommand}" IsDefault="True" VerticalAlignment="Center" />
+                    </WrapPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Label}" Text="{Binding TotalCount, StringFormat={}{0} found (first 100 shown)}" />
+                    <DataGrid ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Number" Binding="{Binding ReservationNumber}" />
+                            <DataGridTextColumn Header="Guest" Binding="{Binding GuestName}" Width="*" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                            <DataGridTextColumn Header="Type" Binding="{Binding RoomTypeCode}" />
+                            <DataGridTextColumn Header="Room" Binding="{Binding RoomNumber}" />
+                            <DataGridTextColumn Header="Arrives" Binding="{Binding ArrivalDate, Converter={StaticResource DateOnly}}" />
+                            <DataGridTextColumn Header="Departs" Binding="{Binding DepartureDate, Converter={StaticResource DateOnly}}" />
+                            <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat=N2}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding Selected, Converter={StaticResource NotNullToVis}}">
+                    <StackPanel DataContext="{Binding}">
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="{Binding Selected.ReservationNumber}" />
+                        <TextBlock FontSize="16" Text="{Binding Selected.Guest.FullName}" />
+                        <TextBlock Style="{StaticResource Label}" Text="{Binding Selected.Guest.Phone}" />
+                        <TextBlock Margin="0,8,0,0"><Run Text="Status: " /><Run FontWeight="SemiBold" Text="{Binding Selected.Status, Mode=OneWay}" /></TextBlock>
+                        <TextBlock><Run Text="{Binding Selected.ArrivalDate, Converter={StaticResource DateOnly}, Mode=OneWay}" /> to <Run Text="{Binding Selected.DepartureDate, Converter={StaticResource DateOnly}, Mode=OneWay}" />, <Run Text="{Binding Selected.Nights, Mode=OneWay}" /> nights</TextBlock>
+                        <TextBlock><Run Text="{Binding Selected.RoomTypeCode, Mode=OneWay}" />, room <Run Text="{Binding Selected.RoomNumber, Mode=OneWay, TargetNullValue=not assigned}" /></TextBlock>
+                        <TextBlock><Run Text="{Binding Selected.RatePlanName, Mode=OneWay}" /> (<Run Text="{Binding Selected.CancellationPolicy, Mode=OneWay}" />)</TextBlock>
+                        <TextBlock Margin="0,8,0,0"><Run Text="Total " /><Run FontWeight="SemiBold" Text="{Binding Selected.TotalAmount, StringFormat=N2, Mode=OneWay}" /> <Run Text="{Binding Selected.Currency, Mode=OneWay}" />, deposit <Run Text="{Binding Selected.DepositRequired, StringFormat=N2, Mode=OneWay}" /></TextBlock>
+                        <TextBlock Text="{Binding Selected.Notes}" TextWrapping="Wrap" Foreground="#52606D" Margin="0,4,0,0" />
+
+                        <Button Content="Open folio" Command="{Binding OpenFolioCommand}" HorizontalAlignment="Left" Margin="0,12,0,0" />
+
+                        <StackPanel Visibility="{Binding CanManage, Converter={StaticResource BoolToVis}}" Margin="0,12,0,0">
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="Assign a room" />
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox Width="140" ItemsSource="{Binding AssignableRooms}" SelectedItem="{Binding RoomToAssign}" DisplayMemberPath="RoomNumber" />
+                                <Button Content="Assign" Command="{Binding AssignRoomCommand}" Margin="8,0,0,8" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="Cancel or no-show" />
+                            <TextBlock Style="{StaticResource Label}" Text="Reason" />
+                            <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Cancel reservation" Command="{Binding CancelReservationCommand}" />
+                                <Button Content="No-show" Command="{Binding NoShowCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
+
+        <TabItem Header="New booking" IsEnabled="{Binding CanManage}">
+            <Grid Margin="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="1. Stay" />
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Arrival" /><DatePicker SelectedDate="{Binding NewArrival}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Departure" /><DatePicker SelectedDate="{Binding NewDeparture}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Adults" /><TextBox Width="50" Text="{Binding Adults}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Children" /><TextBox Width="50" Text="{Binding Children}" /></StackPanel>
+                        <Button Content="Check availability" Command="{Binding CheckAvailabilityCommand}" VerticalAlignment="Center" />
+                    </WrapPanel>
+                    <DataGrid ItemsSource="{Binding Availability}" SelectedItem="{Binding SelectedRoomType}" MaxHeight="220">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Room type" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="Free" Binding="{Binding AvailableRooms}" />
+                            <DataGridTextColumn Header="Rate plan" Binding="{Binding Quote.RatePlanName}" />
+                            <DataGridTextColumn Header="Total" Binding="{Binding Quote.Total, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Deposit" Binding="{Binding Quote.DepositRequired, StringFormat=N2}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Discount %" /><TextBox Width="60" Text="{Binding DiscountPercent}" /></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Source" />
+                            <ComboBox Width="120" ItemsSource="{x:Static vm:ReservationsPageViewModel.Sources}" SelectedItem="{Binding Source}" /></StackPanel>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Label}" Text="Notes" />
+                    <TextBox Text="{Binding Notes}" AcceptsReturn="True" Height="50" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="2. Guest" />
+                    <TextBlock Style="{StaticResource Label}" Text="First name" /><TextBox Text="{Binding FirstName}" />
+                    <TextBlock Style="{StaticResource Label}" Text="Last name" /><TextBox Text="{Binding LastName}" />
+                    <TextBlock Style="{StaticResource Label}" Text="Email" /><TextBox Text="{Binding Email}" />
+                    <TextBlock Style="{StaticResource Label}" Text="Phone" /><TextBox Text="{Binding Phone}" />
+                    <Button Content="Find existing guest" Command="{Binding FindGuestCommand}" HorizontalAlignment="Left" />
+                    <ListBox ItemsSource="{Binding GuestMatches}" SelectedItem="{Binding ExistingGuest}" MaxHeight="120" Margin="0,8">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate><TextBlock><Run Text="{Binding FullName, Mode=OneWay}" />  <Run Foreground="Gray" Text="{Binding Email, Mode=OneWay}" />  <Run Foreground="Gray" Text="{Binding Phone, Mode=OneWay}" /></TextBlock></DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock Text="{Binding ExistingGuest.FullName, StringFormat=Booking for existing guest {0}}" Foreground="#05400A"
+                               Visibility="{Binding ExistingGuest, Converter={StaticResource NotNullToVis}}" />
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="3. Confirm" />
+                    <Button Content="Book" Command="{Binding BookCommand}" HorizontalAlignment="Left" FontWeight="SemiBold" />
+                </StackPanel>
+            </Grid>
+        </TabItem>
+    </TabControl>
+</UserControl>

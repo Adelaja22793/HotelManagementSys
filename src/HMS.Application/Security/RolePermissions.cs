@@ -24,8 +24,8 @@ public static class RolePermissions
             RoomsManage, RatesManage, GuestsManage, ReservationsManage, OverbookingOverride,
             FrontDeskCheckIn, FrontDeskCheckOut, CheckOutWithBalance,
             HousekeepingWork, HousekeepingInspect,
-            FoliosPost, FolioAdjust, PaymentsRecord, RefundsRequest, RefundsApprove, DiscountsApprove,
-            CashierApproveVariance,
+            FoliosPost, FolioAdjust, PaymentsRecord, PaymentsVerify, RefundsRequest, RefundsApprove, DiscountsApprove,
+            CashierOperate, CashierApproveVariance,
             InventoryManage, PurchasingManage, PurchasingApprove, RestaurantManage, RestaurantOperate,
             MaintenanceManage, MaintenanceWork, StaffManage, SecurityManage,
             DocumentsManage, DocumentsApprove, NotificationsManage, BusinessDayClose,
@@ -36,7 +36,7 @@ public static class RolePermissions
             BranchesView, RoomsView, GuestsView, GuestsManage, ReservationsView, ReservationsManage,
             FrontDeskCheckIn, FrontDeskCheckOut, HousekeepingView,
             FoliosView, FoliosPost, PaymentsRecord, RefundsRequest, CashierOperate, DocumentsView,
-            SecurityView,
+            SecurityView, MaintenanceView,
         ],
 
         [Roles.Housekeeping] = [BranchesView, RoomsView, HousekeepingView, HousekeepingWork, MaintenanceView],
@@ -49,8 +49,8 @@ public static class RolePermissions
 
         [Roles.Accountant] =
         [
-            BranchesView, FoliosView, ReportsView, AccountingView, AccountingPost, AccountingManage,
-            AuditView, InventoryView, PurchasingManage, DocumentsView,
+            BranchesView, FoliosView, PaymentsVerify, ReportsView, AccountingView, AccountingPost, AccountingManage,
+            AuditView, InventoryView, PurchasingManage, DocumentsView, DocumentsManage,
         ],
 
         // Auditor is strictly read-only.
@@ -70,4 +70,14 @@ public static class RolePermissions
 
     public static bool HasPermission(IEnumerable<string> roles, string permission) =>
         roles.Any(r => For(r).Contains(permission));
+
+    /// <summary>
+    /// True when every permission the <paramref name="target"/> roles carry is one the caller already holds.
+    /// Stops someone who can manage users from handing out (or editing an account with) more access than they have.
+    /// </summary>
+    public static bool CanGrant(IEnumerable<string> callerRoles, IEnumerable<string> target)
+    {
+        var held = ForRoles(callerRoles).ToHashSet(StringComparer.Ordinal);
+        return target.SelectMany(For).All(held.Contains);
+    }
 }

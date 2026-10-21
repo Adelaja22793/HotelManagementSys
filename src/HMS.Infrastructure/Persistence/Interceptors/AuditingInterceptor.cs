@@ -39,6 +39,16 @@ public sealed class AuditingInterceptor(ICurrentUser currentUser, IClock clock) 
         {
             if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)) continue;
 
+            // Ledger lines and stock history are append-only; corrections are new reversing records.
+            if (entry.State != EntityState.Added && entry.Entity is StockMovement or JournalEntryLine or AuditLog or IncidentAction
+                    or LostFoundCustodyEvent or EmergencyAction or DocumentSignature or NotificationDelivery)
+                throw new InvalidOperationException($"{entry.Metadata.ClrType.Name} records are immutable.");
+            if (entry.State == EntityState.Deleted && entry.Entity is JournalEntry)
+                throw new InvalidOperationException("Journal entries are immutable.");
+            if (entry.State == EntityState.Modified && entry.Entity is JournalEntry
+                && entry.Properties.Any(p => p.IsModified && p.Metadata.Name != nameof(JournalEntry.ReversedByEntryId)))
+                throw new InvalidOperationException("Journal entries are immutable; only the reversal link may be set.");
+
             if (entry.Entity is IAuditableEntity auditable)
             {
                 if (entry.State == EntityState.Added)
@@ -69,6 +79,9 @@ public sealed class AuditingInterceptor(ICurrentUser currentUser, IClock clock) 
         {
             Branch b => (b.CompanyId, (Guid?)b.Id),
             Company c => (c.Id, (Guid?)null),
+            Account a => (a.CompanyId, (Guid?)null),
+            AccountMapping m => (m.CompanyId, (Guid?)null),
+            AccountingPeriod p => (p.CompanyId, (Guid?)null),
             IBranchOwned owned => (owned.CompanyId, (Guid?)owned.BranchId),
             HotelUserBranch m => (m.CompanyId, (Guid?)m.BranchId),
             _ => (Guid.Empty, (Guid?)null),

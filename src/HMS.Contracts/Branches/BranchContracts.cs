@@ -14,6 +14,7 @@ public sealed record BranchDto(
     string? Phone,
     TimeOnly BusinessDayCutoffLocal,
     DateOnly CurrentBusinessDate,
+    bool HousekeepingRequiresInspection,
     bool IsActive,
     Guid ConcurrencyStamp);
 
@@ -34,5 +35,6 @@ public sealed record UpdateBranchRequest(
     string? City,
     string? Phone,
     TimeOnly? BusinessDayCutoffLocal,
+    bool? HousekeepingRequiresInspection,
     bool IsActive,
     Guid ConcurrencyStamp);

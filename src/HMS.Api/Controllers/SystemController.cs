@@ -1,3 +1,6 @@
+using HMS.Api.Authorization;
+using HMS.Api.Services;
+using HMS.Application.Operations;
 using HMS.Application.Security;
 using HMS.Contracts.Operations;
 using HMS.Infrastructure.Persistence;
@@ -35,5 +38,20 @@ public sealed class SystemController(HmsDbContext db, IConfiguration configurati
             migration,
             pending,
             time.GetUtcNow().UtcDateTime);
+    }
+
+    /// <summary>Runs the notification and document-scan jobs now instead of waiting for the next timer tick.</summary>
+    [HttpPost("jobs/run")]
+    [HasPermission(Permissions.SystemManage)]
+    public Task<JobRunResult> RunJobs([FromServices] BackgroundJobRunner runner, CancellationToken ct) => runner.RunOnceAsync(ct);
+
+    /// <summary>Checks documents against their files and that the books balance. Run it on a restored copy.</summary>
+    [HttpGet("restore-check")]
+    [HasPermission(Permissions.SystemManage)]
+    public async Task<RestoreCheckDto> RestoreCheck([FromServices] IRestoreVerificationService verifier, [FromQuery] bool checksums = true,
+        CancellationToken ct = default)
+    {
+        var pending = db.Database.IsSqlite() ? 0 : (await db.Database.GetPendingMigrationsAsync(ct)).Count();
+        return await verifier.CheckAsync(pending, checksums, ct);
     }
 }

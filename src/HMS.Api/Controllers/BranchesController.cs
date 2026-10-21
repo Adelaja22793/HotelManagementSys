@@ -39,6 +39,20 @@ public sealed class BranchesController(IBranchService branches, IAuditQueryServi
     [HttpGet("{branchId:guid}/audit-logs")]
     [HasPermission(Permissions.AuditView)]
     [AllowInactiveBranch]
-    public Task<PagedResult<AuditLogDto>> AuditLogs(Guid branchId, [FromQuery] PageQuery query, [FromQuery] string? entityType, CancellationToken ct) =>
-        audit.ListForBranchAsync(branchId, query, entityType, ct);
+    public Task<PagedResult<AuditLogDto>> AuditLogs(Guid branchId, [FromQuery] PageQuery query, [FromQuery] string? entityType, [FromQuery] string? entityId,
+        [FromQuery] string? userId, [FromQuery] string? action, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc, CancellationToken ct) =>
+        audit.SearchAsync(branchId, query, new AuditFilter(entityType, entityId, userId, action, fromUtc, toUtc), ct);
+
+    /// <summary>CSV export for auditors (max 50,000 rows). The export is itself audited.</summary>
+    [HttpGet("{branchId:guid}/audit-logs/export")]
+    [HasPermission(Permissions.AuditView)]
+    [AllowInactiveBranch]
+    [Produces("text/csv")]
+    public async Task<IActionResult> ExportAuditLogs(Guid branchId, [FromQuery] string? entityType, [FromQuery] string? entityId, [FromQuery] string? userId,
+        [FromQuery] string? action, [FromQuery] DateTime? fromUtc, [FromQuery] DateTime? toUtc, CancellationToken ct)
+    {
+        var csv = await audit.ExportCsvAsync(branchId, new AuditFilter(entityType, entityId, userId, action, fromUtc, toUtc), ct);
+        Response.Headers.CacheControl = "no-store";
+        return File(csv, "text/csv", $"audit-{branchId:N}.csv");
+    }
 }

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Plain .NET so the update checks are tested on any CI agent, not only Windows. -->
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="HMS.SecurityTests" />
+  </ItemGroup>
+</Project>

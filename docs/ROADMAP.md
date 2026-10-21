@@ -3,10 +3,12 @@
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1. Foundation | Solution, identity, JWT + refresh, roles/permissions, branch isolation, EF Core + migrations, audit, health, error contract, WPF sign-in shell, CI | **Done** |
-| 2. Core operations | Room types, rooms, rates and taxes, guests, availability and room-night inventory, reservations, check-in/out, housekeeping, folios, payments, receipts, refunds, cashier shifts | Planned |
-| 3. Operations / finance | POS, kitchen, room service, inventory, purchasing, maintenance, staff, accounting/GL | Planned |
-| 4. Integration | Documents, notification outbox, analytics snapshots, business-day close | Planned |
-| 5. Release hardening | Public booking API and website, security/performance/restore tests, deployment and updater | Planned |
+| 2. Core operations | Room types, rooms, rates and taxes, guests, availability and room-night inventory, reservations, check-in/out, housekeeping, folios, payments, receipts, refunds, cashier shifts | **Done** (API and desktop screens) |
+| 3. Operations / finance | POS, kitchen, room service, inventory, purchasing, maintenance, staff, accounting/GL | **Done** (API and desktop screens) |
+| 4. Integration | Night audit and business-day close, analytics snapshots and dashboards, notification outbox (email, SMS, in-app), private documents with malware scanning and signatures, security log, lost and found, visitors, complaints, emergencies, audit search and export | **Done** (API and desktop screens) |
+| 5. Release hardening | Public booking API (holds, Paystack, webhooks) and React booking website, security tests, performance tests against the p95 targets, restore verification, signed desktop updates with rollback, forwarded-header and token hardening | **Done** (API, website, tooling) |
+| 6. Desktop screens | All 18 modules in the WPF app: dashboard, front desk, reservations, folios, cashier, housekeeping, rooms and rates, guests, restaurant/POS with kitchen tickets, inventory and purchasing, maintenance, staff and rosters, accounting, night audit, document centre, security log, users and audit log. Each screen is tested against the real API | **Done** |
+| Next | Pilot at one branch: real data load, staff training, Windows UI walkthrough of every screen, then roll-out | Planned |
 
 Each module follows the blueprint's pattern: domain model and invariants → DTOs and validation →
 application service → EF configuration, constraints and migration → API with permission and branch

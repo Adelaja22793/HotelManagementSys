@@ -13,6 +13,7 @@ using HMS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -20,6 +21,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
@@ -56,6 +58,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
             ValidAudience = settings.Audience,
             IssuerSigningKey = TokenService.GetSigningKey(settings),
             ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
             RoleClaimType = ClaimTypes.Role,
@@ -105,6 +108,31 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
+    // Public booking: generous for browsing, tight for anything that holds rooms or starts a payment.
+    options.AddPolicy(RateLimitPolicies.PublicRead, context => RateLimitPartition.GetFixedWindowLimiter(
+        "read:" + (context.Connection.RemoteIpAddress?.ToString() ?? "unknown"),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("RateLimiting:PublicReadPerMinute", 60),
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+    options.AddPolicy(RateLimitPolicies.PublicWrite, context => RateLimitPartition.GetFixedWindowLimiter(
+        "write:" + (context.Connection.RemoteIpAddress?.ToString() ?? "unknown"),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("RateLimiting:PublicWritePerMinute", 10),
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+    options.AddPolicy(RateLimitPolicies.Upload, context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("RateLimiting:UploadsPerMinute", 20),
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
     options.OnRejected = async (context, ct) =>
     {
         await context.HttpContext.Response.WriteAsJsonAsync(ApiError.Create(ErrorCodes.RateLimited,
@@ -115,10 +143,46 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<HmsDbContext>("database", tags: ["ready"]);
 
+// The booking website is the only browser client; staff use the desktop app, which needs no CORS.
+builder.Services.AddCors();
+builder.Services.AddOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>().Configure<IConfiguration>((options, config) =>
+    options.AddPolicy(HMS.Api.Controllers.PublicCors.Policy, policy => policy
+        .WithOrigins(config.GetSection("PublicBooking:AllowedOrigins").Get<string[]>() ?? [])
+        .WithMethods("GET", "POST", "PUT", "DELETE")
+        .WithHeaders("Content-Type", HMS.Api.Controllers.PublicBookingController.TokenHeader)
+        .SetPreflightMaxAge(TimeSpan.FromHours(1))));
+
+builder.Services.Configure<BackgroundJobsOptions>(builder.Configuration.GetSection(BackgroundJobsOptions.SectionName));
+builder.Services.AddSingleton<BackgroundJobRunner>();
+builder.Services.AddHostedService<BackgroundJobsWorker>();
+
 builder.Services.AddOpenApi();
+
+// Behind a reverse proxy or load balancer the client address arrives in X-Forwarded-For. Only proxies listed in
+// ForwardedHeaders:KnownProxies (IP addresses) are trusted; rate limits and booking-hold limits use that address.
+builder.Services.AddOptions<ForwardedHeadersOptions>().Configure<IConfiguration>((options, configuration) =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    foreach (var proxy in configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+        options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+});
 
 var app = builder.Build();
 
+if (args.Contains(RestoreCheckCommand.Name))
+{
+    Environment.ExitCode = await RestoreCheckCommand.RunAsync(app.Services, args);
+    return;
+}
+
+// The sandbox gateway confirms bookings without real money; it must never run in production.
+if (string.Equals(app.Configuration["PublicBooking:PaymentProvider"], "Sandbox", StringComparison.OrdinalIgnoreCase)
+    && !app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+    throw new InvalidOperationException("PublicBooking:PaymentProvider=Sandbox is only allowed in Development.");
+
+app.UseForwardedHeaders();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -132,6 +196,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();

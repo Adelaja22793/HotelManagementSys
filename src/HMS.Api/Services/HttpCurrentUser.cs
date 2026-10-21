@@ -23,5 +23,7 @@ internal sealed class HttpCurrentUser(IHttpContextAccessor accessor) : ICurrentU
 
     public string? TraceId => accessor.HttpContext?.TraceIdentifier;
 
+    public string? DisplayName => IsAuthenticated ? Principal!.FindFirstValue(JwtRegisteredClaimNames.Name) : null;
+
     public bool IsInRole(string role) => Principal?.IsInRole(role) == true;
 }

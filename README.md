@@ -16,8 +16,13 @@ for what is implemented today.
 | `src/HMS.Application` | Use cases, permissions, branch access, validation. |
 | `src/HMS.Infrastructure` | EF Core (SQL Server), Identity, JWT, auditing, migrations. |
 | `src/HMS.Api` | Controllers, middleware, auth, health checks. |
-| `src/HMS.Desktop` | WPF client (MVVM, CommunityToolkit). Windows only. |
-| `tests/*` | Unit, API integration, SQL Server integration and desktop tests. |
+| `src/HMS.Desktop.Core` | Desktop view models and API client (no WPF), tested on any OS. |
+| `src/HMS.Desktop` | WPF views for the 18 modules (MVVM, CommunityToolkit). Runs on Windows. |
+| `src/HMS.Updater`, `src/HMS.Launcher` | Signed desktop updates, side-by-side installs and the `HMS.exe` launcher. |
+| `booking-web` | Public booking website (React, Vite, TypeScript). See its README. |
+| `tools/HMS.ReleaseTool` | Generates update signing keys and signs update manifests. |
+| `deploy` | Publish, migration, backup and restore-rehearsal scripts. |
+| `tests/*` | Unit, API integration, SQL Server integration, security, performance and desktop tests. |
 
 ## Prerequisites
 
@@ -59,7 +64,7 @@ dotnet test HotelManagementSystem.sln
 
 - SQL Server tests run when `HMS_SQLSERVER_TEST_CONNECTION` is set, e.g.
   `Server=localhost,1433;User Id=sa;Password=...` (each run creates and drops its own database).
-- `HMS.Desktop.Tests` runs on Windows only.
+- `HMS.Desktop.Tests` drives every desktop screen's view model against the in-memory API and runs on any OS.
 
 ## Migrations
 
