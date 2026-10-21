@@ -11,7 +11,11 @@ public interface IDocumentStorage
     Task ReleaseAsync(string key, CancellationToken ct);
     Task<Stream?> OpenReleasedAsync(string key, CancellationToken ct);
     Task DeleteAsync(string key, CancellationToken ct);
+    /// <summary>Every stored file, for restore checks. Released is false for files still in quarantine.</summary>
+    IAsyncEnumerable<StoredFile> ListAsync(CancellationToken ct);
 }
+
+public sealed record StoredFile(string Key, bool Released);
 
 public enum ScanOutcome
 {

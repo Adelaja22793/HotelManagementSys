@@ -13,6 +13,7 @@ using HMS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -157,13 +158,30 @@ builder.Services.AddHostedService<BackgroundJobsWorker>();
 
 builder.Services.AddOpenApi();
 
+// Behind a reverse proxy or load balancer the client address arrives in X-Forwarded-For. Only proxies listed in
+// ForwardedHeaders:KnownProxies (IP addresses) are trusted; rate limits and booking-hold limits use that address.
+builder.Services.AddOptions<ForwardedHeadersOptions>().Configure<IConfiguration>((options, configuration) =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    foreach (var proxy in configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+        options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+});
+
 var app = builder.Build();
+
+if (args.Contains(RestoreCheckCommand.Name))
+{
+    Environment.ExitCode = await RestoreCheckCommand.RunAsync(app.Services, args);
+    return;
+}
 
 // The sandbox gateway confirms bookings without real money; it must never run in production.
 if (string.Equals(app.Configuration["PublicBooking:PaymentProvider"], "Sandbox", StringComparison.OrdinalIgnoreCase)
     && !app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
     throw new InvalidOperationException("PublicBooking:PaymentProvider=Sandbox is only allowed in Development.");
 
+app.UseForwardedHeaders();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();

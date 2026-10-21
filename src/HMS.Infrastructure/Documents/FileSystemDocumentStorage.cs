@@ -52,6 +52,23 @@ internal sealed partial class FileSystemDocumentStorage(IOptions<DocumentOptions
         return Task.CompletedTask;
     }
 
+    public async IAsyncEnumerable<StoredFile> ListAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+    {
+        foreach (var (area, released) in new[] { ("quarantine", false), ("released", true) })
+        {
+            var root = Path.Combine(Root, area);
+            if (!Directory.Exists(root)) continue;
+            foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            {
+                ct.ThrowIfCancellationRequested();
+                var key = Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/');
+                // Anything that is not a well-formed key is still reported, so stray files are noticed.
+                yield return new StoredFile(key, released);
+            }
+        }
+        await Task.CompletedTask;
+    }
+
     private static Stream? Open(string path) =>
         File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true) : null;
 

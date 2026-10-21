@@ -17,3 +17,20 @@ public sealed record AuditLogDto(
     string EntityId,
     string? ChangedProperties,
     string? TraceId);
+
+/// <summary>
+/// Result of checking a database and document store against each other, for example after a restore.
+/// Problems lists at most 200 entries; the counts are complete.
+/// </summary>
+public sealed record RestoreCheckDto(
+    DateTime CheckedAtUtc,
+    bool Consistent,
+    int DocumentVersionsChecked,
+    int FilesMissing,
+    int ChecksumMismatches,
+    int OrphanFiles,
+    int JournalEntriesChecked,
+    int UnbalancedJournalEntries,
+    int PendingMigrations,
+    IReadOnlyDictionary<string, int> RowCounts,
+    IReadOnlyList<string> Problems);

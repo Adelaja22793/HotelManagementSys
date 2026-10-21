@@ -94,11 +94,18 @@ public class HmsApiFactory : WebApplicationFactory<Program>
     public const string AdminEmail = "admin@hms.test";
     public const string AdminPassword = "Bootstrap-Pass-123";
 
-    private readonly string _dbName = $"hms_{Guid.NewGuid():N}";
+    private readonly string _dbName;
     private readonly SqliteConnection? _keepAlive;
 
-    public HmsApiFactory()
+    public HmsApiFactory() : this($"hms_{Guid.NewGuid():N}", Path.Combine(Path.GetTempPath(), "hms-tests", Guid.NewGuid().ToString("N")))
     {
+    }
+
+    /// <summary>Points the API at an existing database and data folder, for example a restored copy.</summary>
+    protected HmsApiFactory(string databaseName, string dataRoot)
+    {
+        _dbName = databaseName;
+        DataRoot = dataRoot;
         if (!UsesSqlServer)
         {
             _keepAlive = new SqliteConnection(ConnectionString);
@@ -112,7 +119,7 @@ public class HmsApiFactory : WebApplicationFactory<Program>
     public TestClock Clock { get; } = new();
 
     /// <summary>Private folder for this factory's documents and picked-up emails; deleted on dispose.</summary>
-    public string DataRoot { get; } = Path.Combine(Path.GetTempPath(), "hms-tests", Guid.NewGuid().ToString("N"));
+    public string DataRoot { get; }
     public string MailPickupPath => Path.Combine(DataRoot, "mail");
     public FakeMalwareScanner Scanner { get; } = new();
 
@@ -121,7 +128,9 @@ public class HmsApiFactory : WebApplicationFactory<Program>
     public const string BookingSite = "https://book.hms.test";
     public FakePaymentGateway Payments { get; } = new();
 
-    private string ConnectionString => UsesSqlServer
+    public string DatabaseName => _dbName;
+
+    public string ConnectionString => UsesSqlServer
         ? $"{SqlServerBase};Database={_dbName};TrustServerCertificate=True"
         : $"DataSource=file:{_dbName}?mode=memory&cache=shared";
 

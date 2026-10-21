@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IBusinessDayService, BusinessDayService>();
         services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped<Operations.IRestoreVerificationService, Operations.RestoreVerificationService>();
         services.AddScoped<IDocumentScanProcessor, DocumentScanProcessor>();
         services.AddScoped<ISecurityService, SecurityService>();
         services.AddOptions<SecurityOptions>();
