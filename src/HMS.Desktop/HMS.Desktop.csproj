@@ -18,4 +18,23 @@
     <InternalsVisibleTo Include="HMS.Desktop.Tests" />
     <Using Include="System.Net.Http" />
   </ItemGroup>
+  <!-- Puts the HMS API next to the app so "dotnet run" and F5 open a working app with nothing else to start.
+       Release packages get a self-contained server from deploy/scripts/publish-desktop.ps1 instead. -->
+  <Target Name="CopyLocalServer" AfterTargets="Build">
+    <!-- The API is not a project reference (its files must not mix with the app's), so restore it here too.
+         The unique session id gives the restore its own evaluation, as NuGet requires. -->
+    <MSBuild Projects="..\HMS.Api\HMS.Api.csproj" Targets="Restore" RemoveProperties="RuntimeIdentifier;SelfContained"
+             Properties="MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
+    <MSBuild Projects="..\HMS.Api\HMS.Api.csproj" Targets="Build" RemoveProperties="RuntimeIdentifier;SelfContained">
+      <Output TaskParameter="TargetOutputs" ItemName="LocalServerAssembly" />
+    </MSBuild>
+    <PropertyGroup>
+      <LocalServerSource>$([System.IO.Path]::GetDirectoryName('%(LocalServerAssembly.FullPath)'))</LocalServerSource>
+    </PropertyGroup>
+    <ItemGroup>
+      <LocalServerFile Include="$(LocalServerSource)\**\*" Exclude="$(LocalServerSource)\App_Data\**;$(LocalServerSource)\appsettings.Development.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LocalServerFile)" DestinationFiles="@(LocalServerFile->'$(OutDir)server\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

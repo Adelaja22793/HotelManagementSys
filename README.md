@@ -7,6 +7,19 @@ authentication, permissions and branch isolation.
 Built from the *Hotel Management System Master Blueprint* in delivery phases. See [docs/ROADMAP.md](docs/ROADMAP.md)
 for what is implemented today.
 
+## Quick start: one PC, one click (Windows)
+
+The desktop app runs the API itself by default (`Api:Mode` is `Local`), so there is nothing else to start.
+
+1. Install the .NET 10 SDK, and SQL Server Express LocalDB (it comes with Visual Studio).
+2. Open `HotelManagementSystem.sln`, set `HMS.Desktop` as the startup project and press F5,
+   or run `dotnet run --project src/HMS.Desktop`.
+3. On the first start, fill in the hotel name and the administrator's details. After that, HMS opens straight to sign-in.
+
+The built-in server listens on `127.0.0.1` only, keeps its data in the LocalDB database `HMS_Local`, and stores its
+settings, logs and documents in `%LocalAppData%\HMS`. It stops when the app closes. If LocalDB is missing, the start
+screen says so and links to the installer.
+
 ## Solution layout
 
 | Project | Purpose |
@@ -30,7 +43,7 @@ for what is implemented today.
 - SQL Server 2019+ (LocalDB is fine for development on Windows; Docker works elsewhere)
 - Windows for running the desktop app (it builds anywhere)
 
-## Run locally
+## Run the API separately (shared server for several PCs)
 
 ```bash
 dotnet tool restore
@@ -53,8 +66,8 @@ SQL Server in Docker (non-Windows):
 docker run -d --name hms-sql -e ACCEPT_EULA=Y -e 'MSSQL_SA_PASSWORD=<strong password>' -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-Desktop: set `Api:BaseUrl` in `src/HMS.Desktop/appsettings.json` to the API's HTTPS address, then
-`dotnet run --project src/HMS.Desktop` on Windows. The first admin sign-in is flagged to change the temporary password.
+Desktop: in `src/HMS.Desktop/appsettings.json` set `Api:Mode` to `Remote` and `Api:BaseUrl` to the API's HTTPS address,
+then `dotnet run --project src/HMS.Desktop` on Windows. The first admin sign-in is flagged to change the temporary password.
 
 ## Tests
 
