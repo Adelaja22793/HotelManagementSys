@@ -529,7 +529,7 @@ internal sealed class PublicBookingService(
 
     private async Task<PublicBookingDto> BookingDtoAsync(Guid holdId, CancellationToken ct)
     {
-        var hold = await db.BookingHolds.AsNoTracking().SingleAsync(h => h.Id == holdId, ct);
+        var hold = await db.BookingHolds.AsNoTracking().Include(h => h.Rooms).SingleAsync(h => h.Id == holdId, ct); // TotalAmount sums the rooms
         var branch = await db.Branches.AsNoTracking().SingleAsync(b => b.Id == hold.BranchId, ct);
         var payment = await db.BookingPaymentAttempts.AsNoTracking().Where(p => p.HoldId == holdId)
             .OrderByDescending(p => p.Status == OnlinePaymentStatus.Succeeded).ThenByDescending(p => p.CreatedAtUtc).FirstOrDefaultAsync(ct);
