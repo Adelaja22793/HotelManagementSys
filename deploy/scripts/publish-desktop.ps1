@@ -18,6 +18,12 @@ dotnet publish $Project -c Release -r win-x64 --self-contained true `
     -p:Version=$Version -p:PublishSingleFile=false -o $Target
 if ($LASTEXITCODE -ne 0) { throw "Publish failed." }
 
+# The built-in server (Api:Mode "Local"): the desktop app starts server\HMS.Api.exe itself on 127.0.0.1.
+dotnet publish src/HMS.Api/HMS.Api.csproj -c Release -r win-x64 --self-contained true `
+    -p:Version=$Version -o (Join-Path $Target "server")
+if ($LASTEXITCODE -ne 0) { throw "Server publish failed." }
+Remove-Item (Join-Path $Target "server/appsettings.Development.json") -ErrorAction SilentlyContinue
+
 # The launcher (HMS.exe) sits in the install root and starts versions\<current>\HMS.Desktop.exe.
 dotnet publish src/HMS.Launcher/HMS.Launcher.csproj -c Release -r win-x64 --self-contained true `
     -p:Version=$Version -p:PublishSingleFile=true -o (Join-Path $Output "launcher")

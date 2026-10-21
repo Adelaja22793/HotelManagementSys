@@ -6,6 +6,15 @@ WPF desktop workstations ──HTTPS (hotel LAN)──▶ ASP.NET Core Web API �
                                                  └──▶ private file storage, background workers (later phases)
 ```
 
+Two ways to run it:
+
+- **Local (default, one PC).** `HMS.Desktop` starts the API itself (`LocalServer` in `HMS.Desktop.Core`): the
+  `server` folder next to the app holds `HMS.Api`, which listens on `127.0.0.1` on a free port and uses SQL Server
+  Express LocalDB. Its JWT key is generated once and kept with Windows DPAPI in `%LocalAppData%\HMS\local-server.json`.
+  The API watches the app's process id (`Hosting:ParentProcessId`) and stops when the app exits. A first-run screen
+  supplies the bootstrap hotel and administrator. Staff only ever open one program.
+- **Remote (several PCs, booking website).** `Api:Mode` is `Remote` and every desktop connects to one shared API over HTTPS.
+
 ## Layers
 
 - **Domain** holds entities and invariants (e.g. `Branch.GetBusinessDate`, code/currency validation). It references nothing.
