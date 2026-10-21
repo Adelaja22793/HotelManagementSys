@@ -197,8 +197,8 @@ internal sealed class FrontDeskService(
             .ToListAsync(ct);
 
         var reservationIds = stays.Select(s => s.ReservationId).ToList();
-        var folioIds = await db.Folios.Where(f => reservationIds.Contains(f.ReservationId))
-            .Select(f => new { f.ReservationId, f.Id }).ToDictionaryAsync(f => f.ReservationId, f => f.Id, ct);
+        var folioIds = await db.Folios.Where(f => f.ReservationId != null && reservationIds.Contains(f.ReservationId.Value))
+            .Select(f => new { ReservationId = f.ReservationId!.Value, f.Id }).ToDictionaryAsync(f => f.ReservationId, f => f.Id, ct);
 
         var result = new List<StayDto>(stays.Count);
         foreach (var s in stays)

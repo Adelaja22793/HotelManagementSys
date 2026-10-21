@@ -18,6 +18,16 @@
 | HTTPS required for the desktop API URL | `App.xaml.cs` |
 | Dependency vulnerability scan in CI, vulnerable transitive packages pinned | `ci.yml`, `Directory.Packages.props` |
 
+## Added in phase 3
+
+| Control | Where |
+| --- | --- |
+| Separation of duties: requisitions, purchase orders, invoice discrepancies, leave and overtime cannot be approved by the person who raised them | domain entities (`SELF_APPROVAL`) |
+| Work orders are signed off by someone other than the assigned technician | `MaintenanceService.InspectAsync` |
+| Voiding food already sent to the kitchen needs `restaurant.manage` | `RestaurantService` |
+| Ledger and stock movements are append-only; corrections are reversing entries | `AuditingInterceptor` |
+| Manual journals cannot touch control accounts (AR, AP, inventory, GRNI) and closed periods refuse postings | `AccountingService`, `LedgerService` |
+
 ## Rules for every new module
 
 - Put branch-scoped endpoints under `/api/v1/branches/{branchId}/...` so the global filter applies.

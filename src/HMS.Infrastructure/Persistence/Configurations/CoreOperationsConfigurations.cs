@@ -231,6 +231,7 @@ internal sealed class FolioConfiguration : IEntityTypeConfiguration<Folio>
     {
         b.ToTable("Folios");
         b.Property(x => x.FolioNumber).HasMaxLength(30).IsRequired();
+        b.Property(x => x.Name).HasMaxLength(200);
         b.Property(x => x.Currency).HasMaxLength(3).IsFixedLength();
         b.HasIndex(x => new { x.BranchId, x.FolioNumber }).IsUnique();
         b.HasIndex(x => x.ReservationId).IsUnique();

@@ -36,6 +36,49 @@ public interface IApplicationDbContext
     DbSet<CashierShift> CashierShifts { get; }
     DbSet<CashierMovement> CashierMovements { get; }
 
+    DbSet<Supplier> Suppliers { get; }
+    DbSet<StockLocation> StockLocations { get; }
+    DbSet<InventoryItem> InventoryItems { get; }
+    DbSet<StockBalance> StockBalances { get; }
+    DbSet<StockMovement> StockMovements { get; }
+    DbSet<PurchaseRequisition> PurchaseRequisitions { get; }
+    DbSet<PurchaseRequisitionLine> PurchaseRequisitionLines { get; }
+    DbSet<PurchaseOrder> PurchaseOrders { get; }
+    DbSet<PurchaseOrderLine> PurchaseOrderLines { get; }
+    DbSet<GoodsReceipt> GoodsReceipts { get; }
+    DbSet<GoodsReceiptLine> GoodsReceiptLines { get; }
+    DbSet<SupplierInvoice> SupplierInvoices { get; }
+    DbSet<SupplierInvoiceLine> SupplierInvoiceLines { get; }
+    DbSet<SupplierPayment> SupplierPayments { get; }
+    DbSet<RestaurantOutlet> RestaurantOutlets { get; }
+    DbSet<RestaurantTable> RestaurantTables { get; }
+    DbSet<MenuCategory> MenuCategories { get; }
+    DbSet<MenuItem> MenuItems { get; }
+    DbSet<MenuItemIngredient> MenuItemIngredients { get; }
+    DbSet<RestaurantOrder> RestaurantOrders { get; }
+    DbSet<RestaurantOrderLine> RestaurantOrderLines { get; }
+    DbSet<KitchenTicket> KitchenTickets { get; }
+    DbSet<KitchenTicketLine> KitchenTicketLines { get; }
+    DbSet<Asset> Assets { get; }
+    DbSet<MaintenanceRequest> MaintenanceRequests { get; }
+    DbSet<WorkOrder> WorkOrders { get; }
+    DbSet<WorkOrderPartUsage> WorkOrderParts { get; }
+    DbSet<PreventiveMaintenancePlan> PreventivePlans { get; }
+    DbSet<PreventiveMaintenanceOccurrence> PreventiveOccurrences { get; }
+    DbSet<Department> Departments { get; }
+    DbSet<Employee> Employees { get; }
+    DbSet<WorkShift> WorkShifts { get; }
+    DbSet<RosterEntry> RosterEntries { get; }
+    DbSet<AttendanceRecord> AttendanceRecords { get; }
+    DbSet<LeaveRecord> LeaveRecords { get; }
+    DbSet<OvertimeRequest> OvertimeRequests { get; }
+    DbSet<ShiftHandover> ShiftHandovers { get; }
+    DbSet<Account> Accounts { get; }
+    DbSet<AccountMapping> AccountMappings { get; }
+    DbSet<AccountingPeriod> AccountingPeriods { get; }
+    DbSet<JournalEntry> JournalEntries { get; }
+    DbSet<JournalEntryLine> JournalEntryLines { get; }
+
     DatabaseFacade Database { get; }
 
     Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }

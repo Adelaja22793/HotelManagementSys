@@ -71,3 +71,22 @@ Records from another branch return 404. Updates send `concurrencyStamp`; a stale
 
 Common business error codes: `ROOM_NOT_AVAILABLE`, `ROOM_NOT_READY`, `ROOM_UNAVAILABLE`,
 `BALANCE_DUE`, `SHIFT_REQUIRED`, `STAY_CLOSED`, `FOLIO_CLOSED`, `IDEMPOTENCY_KEY_REQUIRED`.
+
+## Operations and finance (phase 3)
+
+Same rules as phase 2: everything sits under `/branches/{branchId}`, updates send `concurrencyStamp`,
+and stock, receipt, part-issue, settlement and supplier-payment POSTs take an `Idempotency-Key` header.
+
+| Area | Routes | Permissions |
+| --- | --- | --- |
+| Inventory | `GET/POST inventory/suppliers`, `PUT inventory/suppliers/{id}`, `GET/POST inventory/locations`, `PUT inventory/locations/{id}`, `GET/POST inventory/items`, `PUT inventory/items/{id}`, `GET inventory/balances`, `GET inventory/movements`, `POST inventory/receipts`, `/counts`, `/transfers`, `/wastage` | `inventory.view`, `inventory.manage`; suppliers need `purchasing.manage` |
+| Purchasing | `GET/POST purchasing/requisitions`, `POST purchasing/requisitions/{id}/decision`, `GET/POST purchasing/orders`, `GET purchasing/orders/{id}`, `POST purchasing/orders/{id}/approve`, `/cancel`, `/close`, `GET/POST purchasing/orders/{id}/receipts`, `GET purchasing/uninvoiced-receipts`, `GET/POST purchasing/invoices`, `POST purchasing/invoices/{id}/approve`, `POST purchasing/invoices/{id}/payments` | `purchasing.manage`, `purchasing.approve` (never the person who raised it), `inventory.manage` to receive, `accounting.post` to pay |
+| Restaurant | `GET/POST restaurant/outlets`, `PUT restaurant/outlets/{id}`, `.../tables`, `.../categories`, `.../menu`, `GET/POST restaurant/orders`, `GET restaurant/orders/{id}`, `POST restaurant/orders/{id}/lines`, `/lines/{lineId}/void`, `/send`, `/void`, `/charge-to-room`, `/settle`, `GET restaurant/kitchen/tickets`, `POST restaurant/kitchen/tickets/{id}/status` | `restaurant.operate`, `restaurant.manage` (set-up, and voiding food already sent); charge-to-room also needs `folios.post`, settle also needs `payments.record` |
+| Maintenance | `GET/POST maintenance/assets`, `PUT maintenance/assets/{id}`, `GET maintenance/assets/{id}/history`, `GET/POST maintenance/requests`, `POST maintenance/requests/{id}/triage`, `GET/POST maintenance/work-orders`, `GET maintenance/work-orders/{id}`, `POST .../assign`, `/start`, `/parts`, `/finish`, `/inspect`, `/cancel`, `GET/POST maintenance/preventive-plans`, `PUT maintenance/preventive-plans/{id}`, `POST maintenance/preventive-plans/generate` | `maintenance.view` (anyone can report), `maintenance.work`, `maintenance.manage`; the assigned technician cannot inspect their own work |
+| Staff | `GET/POST staff/departments`, `GET/POST staff/employees`, `GET/POST staff/shifts` (+ `PUT`), `GET/POST staff/roster`, `DELETE staff/roster/{id}`, `POST staff/attendance/clock-in`, `/clock-out`, `GET staff/attendance`, `GET staff/attendance/summary`, `GET/POST staff/leave`, `POST staff/leave/{id}/decision`, `GET/POST staff/overtime`, `POST staff/overtime/{id}/decision`, `GET/POST staff/handovers`, `POST staff/handovers/{id}/acknowledge` | `staff.view`, `staff.manage`; anyone can clock themselves in and write handovers |
+| Accounting | `GET/POST accounting/accounts`, `PUT accounting/accounts/{id}`, `GET accounting/accounts/{id}/ledger`, `GET/PUT accounting/mappings`, `GET accounting/periods`, `POST accounting/periods/{id}/close`, `/reopen`, `GET/POST accounting/journals`, `GET accounting/journals/{id}`, `POST accounting/journals/{id}/reverse`, `GET accounting/trial-balance?from&to&consolidated` | `accounting.view`, `accounting.post`, `accounting.manage` |
+
+Phase 3 error codes: `INSUFFICIENT_STOCK`, `OVER_RECEIPT`, `PO_STATE`, `INVOICE_STATE`, `DUPLICATE_SUPPLIER_INVOICE`,
+`OVERPAYMENT`, `SELF_APPROVAL`, `TABLE_OCCUPIED`, `AMOUNT_MISMATCH`, `NOTHING_TO_SEND`, `WORK_ORDER_STATE`,
+`ROSTER_OVERLAP`, `REST_PERIOD`, `ROSTERED_DURING_LEAVE`, `ALREADY_CLOCKED_IN`, `NO_EMPLOYEE_RECORD`,
+`JOURNAL_UNBALANCED` (400), `CONTROL_ACCOUNT`, `PERIOD_CLOSED`, `PERIOD_NOT_ENDED`, `JOURNAL_ALREADY_REVERSED`.

@@ -20,7 +20,12 @@ public interface INumberSequence
 internal sealed class NumberSequence(IApplicationDbContext db) : INumberSequence
 {
     public static readonly string[] All =
-        [SequenceNames.Reservation, SequenceNames.Folio, SequenceNames.Receipt, SequenceNames.Invoice, SequenceNames.Refund];
+        [
+            SequenceNames.Reservation, SequenceNames.Folio, SequenceNames.Receipt, SequenceNames.Invoice, SequenceNames.Refund,
+            SequenceNames.Journal, SequenceNames.Requisition, SequenceNames.PurchaseOrder, SequenceNames.GoodsReceipt,
+            SequenceNames.SupplierInvoice, SequenceNames.SupplierPayment, SequenceNames.RestaurantOrder, SequenceNames.KitchenTicket,
+            SequenceNames.WorkOrder, SequenceNames.StockDocument,
+        ];
 
     public async Task<string> NextAsync(Branch branch, string sequenceName, CancellationToken ct)
     {

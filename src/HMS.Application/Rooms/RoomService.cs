@@ -21,6 +21,11 @@ public interface IRoomService
     Task<RoomBlockDto> CreateBlockAsync(Guid branchId, CreateRoomBlockRequest request, CancellationToken ct = default);
     Task<RoomBlockDto> ReleaseBlockAsync(Guid branchId, Guid blockId, CancellationToken ct = default);
 
+    /// <summary>Validates and adds a block for other modules (e.g. maintenance). Call EnsureBlockRowsAsync first, then this inside a transaction.</summary>
+    Task<RoomBlock> AddBlockAsync(BranchScope scope, Room room, DateOnly start, DateOnly end, string reason, CancellationToken ct);
+    Task EnsureBlockRowsAsync(BranchScope scope, Room room, DateOnly start, DateOnly end, CancellationToken ct);
+    Task ReleaseBlockAsync(BranchScope scope, RoomBlock block, CancellationToken ct);
+
     Task<IReadOnlyList<InventoryDayDto>> GetInventoryAsync(Guid branchId, DateOnly start, DateOnly end, CancellationToken ct = default);
     Task SetSellLimitAsync(Guid branchId, SetSellLimitRequest request, CancellationToken ct = default);
     Task<InventoryReconciliationDto> ReconcileAsync(Guid branchId, DateOnly start, DateOnly end, CancellationToken ct = default);
@@ -143,10 +148,27 @@ internal sealed class RoomService(
     {
         var scope = await access.ScopeAsync(user, clock, branchId, ct);
         var room = await db.Rooms.GetOwnedAsync(branchId, request.RoomId, "Room", ct);
-        var block = new RoomBlock(scope.CompanyId, branchId, room.Id, request.StartDate, request.EndDate, request.Reason);
-        if (block.EndDate.DayNumber - block.StartDate.DayNumber > MaxInventoryWindowDays)
-            throw new ValidationAppException(nameof(request.EndDate), "Blocks can cover at most one year. Deactivate the room instead.");
+        await EnsureBlockRowsAsync(scope, room, request.StartDate, request.EndDate, ct);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var block = await AddBlockAsync(scope, room, request.StartDate, request.EndDate, request.Reason, ct);
+        await tx.CommitAsync(ct);
 
+        block = await db.RoomBlocks.Include(b => b.Room).SingleAsync(b => b.Id == block.Id, ct);
+        return ToDto(block);
+    }
+
+    public async Task EnsureBlockRowsAsync(BranchScope scope, Room room, DateOnly start, DateOnly end, CancellationToken ct)
+    {
+        if (end <= start) throw new ValidationAppException("EndDate", "Block end must be after start.");
+        if (end.DayNumber - start.DayNumber > MaxInventoryWindowDays)
+            throw new ValidationAppException("EndDate", "Blocks can cover at most one year. Deactivate the room instead.");
+        await inventory.EnsureRowsAsync(scope.Branch, room.RoomTypeId, start, end, ct);
+    }
+
+    public async Task<RoomBlock> AddBlockAsync(BranchScope scope, Room room, DateOnly start, DateOnly end, string reason, CancellationToken ct)
+    {
+        db.RequireTransaction();
+        var block = new RoomBlock(scope.CompanyId, scope.BranchId, room.Id, start, end, reason);
         if (await db.RoomBlocks.AnyAsync(b => b.RoomId == room.Id && b.IsActive && b.StartDate < block.EndDate && b.EndDate > block.StartDate, ct))
             throw new ConflictException("ROOM_ALREADY_BLOCKED", "The room already has a block overlapping these dates.");
 
@@ -154,15 +176,10 @@ internal sealed class RoomService(
         if (await db.AssignedRoomNights.AnyAsync(a => a.RoomId == room.Id && a.Date >= block.StartDate && a.Date < block.EndDate, ct))
             throw new ConflictException("ROOM_ASSIGNED", "The room is assigned to a reservation during these dates. Move the guest first.");
 
-        await inventory.EnsureRowsAsync(scope.Branch, room.RoomTypeId, block.StartDate, block.EndDate, ct);
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.RoomBlocks.Add(block);
         await db.SaveChangesAsync(ct);
         if (room.IsActive) await inventory.AdjustBlockedAsync(scope.Branch, room.RoomTypeId, block.StartDate, block.EndDate, +1, ct);
-        await tx.CommitAsync(ct);
-
-        block = await db.RoomBlocks.Include(b => b.Room).SingleAsync(b => b.Id == block.Id, ct);
-        return ToDto(block);
+        return block;
     }
 
     public async Task<RoomBlockDto> ReleaseBlockAsync(Guid branchId, Guid blockId, CancellationToken ct = default)
@@ -171,11 +188,19 @@ internal sealed class RoomService(
         var block = await db.RoomBlocks.Include(b => b.Room).GetOwnedAsync(branchId, blockId, "Room block", ct);
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        block.Release(scope.UtcNow);
+        await ReleaseBlockAsync(scope, block, ct);
         await db.SaveChangesAsync(ct);
-        if (block.Room!.IsActive) await inventory.AdjustBlockedAsync(scope.Branch, block.Room.RoomTypeId, block.StartDate, block.EndDate, -1, ct);
         await tx.CommitAsync(ct);
         return ToDto(block);
+    }
+
+    public async Task ReleaseBlockAsync(BranchScope scope, RoomBlock block, CancellationToken ct)
+    {
+        db.RequireTransaction();
+        var room = block.Room ?? await db.Rooms.SingleAsync(r => r.Id == block.RoomId, ct);
+        block.Release(scope.UtcNow);
+        await db.SaveChangesAsync(ct);
+        if (room.IsActive) await inventory.AdjustBlockedAsync(scope.Branch, room.RoomTypeId, block.StartDate, block.EndDate, -1, ct);
     }
 
     public async Task<IReadOnlyList<InventoryDayDto>> GetInventoryAsync(Guid branchId, DateOnly start, DateOnly end, CancellationToken ct = default)

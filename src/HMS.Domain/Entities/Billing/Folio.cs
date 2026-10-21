@@ -18,11 +18,25 @@ public class Folio : BranchEntity, IConcurrencyTracked
         Currency = Common.Currency.Normalize(currency);
     }
 
+    /// <summary>Folio for a walk-in restaurant or bar sale. It has no reservation and is settled at once.</summary>
+    public static Folio WalkIn(Guid companyId, Guid branchId, string number, string name, string currency) => new()
+    {
+        CompanyId = companyId,
+        BranchId = branchId,
+        FolioNumber = number,
+        Type = FolioType.WalkIn,
+        Name = Guard.Required(name, "NAME_REQUIRED", "Folio name is required", 200),
+        Currency = Common.Currency.Normalize(currency),
+    };
+
     public string FolioNumber { get; private set; } = string.Empty;
-    public Guid ReservationId { get; private set; }
+    public FolioType Type { get; private set; } = FolioType.Guest;
+    /// <summary>Label for walk-in folios (for example the outlet and order number).</summary>
+    public string? Name { get; private set; }
+    public Guid? ReservationId { get; private set; }
     public Reservation? Reservation { get; private set; }
     public Guid? StayId { get; private set; }
-    public Guid GuestId { get; private set; }
+    public Guid? GuestId { get; private set; }
     public Guest? Guest { get; private set; }
     public string Currency { get; private set; } = Common.Currency.Default;
     public FolioStatus Status { get; private set; } = FolioStatus.Open;

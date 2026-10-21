@@ -35,6 +35,15 @@ public static class DatabaseInitializer
         await SeedRolesAsync(sp.GetRequiredService<RoleManager<IdentityRole>>());
         await BootstrapAsync(sp, db, logger, cancellationToken);
         await EnsureSequencesAsync(sp, db, cancellationToken);
+        await EnsureChartOfAccountsAsync(sp, db, cancellationToken);
+    }
+
+    private static async Task EnsureChartOfAccountsAsync(IServiceProvider sp, HmsDbContext db, CancellationToken ct)
+    {
+        var ledger = sp.GetRequiredService<HMS.Application.Accounting.ILedgerService>();
+        foreach (var companyId in await db.Companies.Select(c => c.Id).ToListAsync(ct))
+            await ledger.EnsureChartAsync(companyId, ct);
+        await db.SaveChangesAsync(ct);
     }
 
     private static async Task EnsureSequencesAsync(IServiceProvider sp, HmsDbContext db, CancellationToken ct)

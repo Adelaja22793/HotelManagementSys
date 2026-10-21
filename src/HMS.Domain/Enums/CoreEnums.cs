@@ -71,6 +71,14 @@ public enum ChargeType
     Restaurant = 3,
     Adjustment = 4,
     Discount = 5,
+    Bar = 6,
+}
+
+public enum FolioType
+{
+    Guest = 0,
+    /// <summary>Restaurant/bar sale to a walk-in customer, settled immediately.</summary>
+    WalkIn = 1,
 }
 
 public enum TenderType

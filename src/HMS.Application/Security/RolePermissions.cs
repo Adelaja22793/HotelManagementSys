@@ -36,7 +36,7 @@ public static class RolePermissions
             BranchesView, RoomsView, GuestsView, GuestsManage, ReservationsView, ReservationsManage,
             FrontDeskCheckIn, FrontDeskCheckOut, HousekeepingView,
             FoliosView, FoliosPost, PaymentsRecord, RefundsRequest, CashierOperate, DocumentsView,
-            SecurityView,
+            SecurityView, MaintenanceView,
         ],
 
         [Roles.Housekeeping] = [BranchesView, RoomsView, HousekeepingView, HousekeepingWork, MaintenanceView],

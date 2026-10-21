@@ -14,7 +14,7 @@ public sealed record RefundDto(Guid Id, string RefundNumber, decimal Amount, str
 public sealed record FolioDto(
     Guid Id,
     string FolioNumber,
-    Guid ReservationId,
+    Guid? ReservationId,
     string ReservationNumber,
     Guid? StayId,
     string GuestName,

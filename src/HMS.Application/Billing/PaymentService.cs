@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HMS.Application.Abstractions;
+using HMS.Application.Accounting;
 using HMS.Application.Cashier;
 using HMS.Application.Common;
 using HMS.Contracts.Billing;
@@ -19,6 +20,13 @@ public interface IPaymentService
     Task<RefundDto> DecideRefundAsync(Guid branchId, Guid refundId, RefundDecisionRequest request, CancellationToken ct = default);
     Task<RefundDto> ExecuteRefundAsync(Guid branchId, Guid refundId, ExecuteRefundRequest request, CancellationToken ct = default);
     Task<IReadOnlyList<RefundDto>> ListRefundsAsync(Guid branchId, string? status, CancellationToken ct = default);
+
+    /// <summary>
+    /// Records a payment inside the caller's transaction (cash and POS need an open shift and are
+    /// confirmed with a receipt at once; bank transfers stay pending). Used by other modules such as the restaurant.
+    /// </summary>
+    Task<Payment> CollectAsync(BranchScope scope, Folio folio, TenderType tender, decimal amount, string idempotencyKey,
+        string? externalReference, CancellationToken ct);
 }
 
 internal sealed class PaymentService(
@@ -27,7 +35,8 @@ internal sealed class PaymentService(
     ICurrentUser user,
     IClock clock,
     INumberSequence numbers,
-    ICashierService cashier) : IPaymentService
+    ICashierService cashier,
+    ILedgerService ledger) : IPaymentService
 {
     public async Task<PaymentDto> RecordAsync(Guid branchId, Guid folioId, RecordPaymentRequest request, string? idempotencyKey, CancellationToken ct = default)
     {
@@ -46,30 +55,7 @@ internal sealed class PaymentService(
         folio.EnsureOpen();
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        var payment = new Payment(scope.CompanyId, branchId, folio.Id, tender, request.Amount, folio.Currency, idempotencyKey,
-            scope.UserId, scope.UtcNow, request.ExternalReference);
-
-        if (tender is TenderType.Cash or TenderType.PosCard)
-        {
-            if (tender == TenderType.PosCard && string.IsNullOrWhiteSpace(request.ExternalReference))
-                throw new ValidationAppException(nameof(request.ExternalReference), "Enter the POS terminal approval/slip reference.");
-
-            // Payment and cashier movement commit together; touching the shift blocks a concurrent close.
-            var shift = await cashier.RequireOpenShiftAsync(scope, ct);
-            payment.LinkShift(shift.Id);
-            payment.Confirm(scope.UserId, scope.UtcNow);
-            db.CashierMovements.Add(new CashierMovement(scope.CompanyId, branchId, shift.Id, CashierMovementType.Payment, tender,
-                payment.Amount, scope.UtcNow, paymentId: payment.Id));
-        }
-        else if (string.IsNullOrWhiteSpace(request.ExternalReference))
-        {
-            throw new ValidationAppException(nameof(request.ExternalReference), "Enter the bank transfer reference.");
-        }
-        // Bank transfers stay Pending until verified against the bank statement.
-
-        db.Payments.Add(payment);
-        db.Touch(folio);
-        if (payment.Status == PaymentStatus.Confirmed) await IssueReceiptAsync(scope, folio, payment, ct);
+        var payment = await CollectAsync(scope, folio, tender, request.Amount, idempotencyKey, request.ExternalReference, ct);
 
         try
         {
@@ -86,6 +72,40 @@ internal sealed class PaymentService(
             return await ReplayAsync(winner, folioId, request.Amount, tender, ct);
         }
         return await ToDtoAsync(payment, ct);
+    }
+
+    public async Task<Payment> CollectAsync(BranchScope scope, Folio folio, TenderType tender, decimal amount, string idempotencyKey,
+        string? externalReference, CancellationToken ct)
+    {
+        db.RequireTransaction();
+        folio.EnsureOpen();
+        if (tender == TenderType.Online)
+            throw new ValidationAppException("Tender", "Online payments are recorded by the payment provider integration, not by staff.");
+        var payment = new Payment(scope.CompanyId, scope.BranchId, folio.Id, tender, amount, folio.Currency, idempotencyKey,
+            scope.UserId, scope.UtcNow, externalReference);
+
+        if (tender is TenderType.Cash or TenderType.PosCard)
+        {
+            if (tender == TenderType.PosCard && string.IsNullOrWhiteSpace(externalReference))
+                throw new ValidationAppException("ExternalReference", "Enter the POS terminal approval/slip reference.");
+
+            // Payment and cashier movement commit together; touching the shift blocks a concurrent close.
+            var shift = await cashier.RequireOpenShiftAsync(scope, ct);
+            payment.LinkShift(shift.Id);
+            payment.Confirm(scope.UserId, scope.UtcNow);
+            db.CashierMovements.Add(new CashierMovement(scope.CompanyId, scope.BranchId, shift.Id, CashierMovementType.Payment, tender,
+                payment.Amount, scope.UtcNow, paymentId: payment.Id));
+        }
+        else if (string.IsNullOrWhiteSpace(externalReference))
+        {
+            throw new ValidationAppException("ExternalReference", "Enter the bank transfer reference.");
+        }
+        // Bank transfers stay Pending until verified against the bank statement.
+
+        db.Payments.Add(payment);
+        db.Touch(folio);
+        if (payment.Status == PaymentStatus.Confirmed) await IssueReceiptAsync(scope, folio, payment, ct);
+        return payment;
     }
 
     public async Task<PaymentDto> VerifyAsync(Guid branchId, Guid paymentId, VerifyPaymentRequest request, CancellationToken ct = default)
@@ -184,6 +204,7 @@ internal sealed class PaymentService(
         }
 
         refund.Execute(scope.UserId, scope.UtcNow, request.ExternalReference, shiftId);
+        await ledger.PostRefundAsync(scope, folio, refund, ct);
         db.Touch(folio);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
@@ -219,6 +240,7 @@ internal sealed class PaymentService(
             confirmedAtUtc = payment.ConfirmedAtUtc,
         });
         db.Receipts.Add(new Receipt(scope.CompanyId, scope.BranchId, payment.Id, number, scope.UtcNow, snapshot));
+        await ledger.PostPaymentAsync(scope, folio, payment, ct); // only confirmed money reaches the ledger
     }
 
     private async Task<PaymentDto> ReplayAsync(Payment existing, Guid folioId, decimal amount, TenderType tender, CancellationToken ct)

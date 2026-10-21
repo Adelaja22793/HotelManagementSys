@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HMS.Application.Abstractions;
+using HMS.Application.Accounting;
 using HMS.Application.Common;
 using HMS.Application.Rates;
 using HMS.Application.Security;
@@ -44,7 +45,8 @@ internal sealed class FolioService(
     ICurrentUser user,
     IClock clock,
     INumberSequence numbers,
-    IPricingService pricing) : IFolioService
+    IPricingService pricing,
+    ILedgerService ledger) : IFolioService
 {
     public async Task<FolioDto> GetAsync(Guid branchId, Guid folioId, CancellationToken ct = default)
     {
@@ -108,7 +110,9 @@ internal sealed class FolioService(
             throw new ConflictException("REVERSE_PARENT", "Reverse the original charge; its tax is reversed with it.");
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        await ReverseWithTaxAsync(scope, charge, request.Reason, ct);
+        var reversals = await ReverseWithTaxAsync(scope, charge, request.Reason, ct);
+        await ledger.PostFolioChargesAsync(scope, reversals, "FolioChargeReversal", charge.Id.ToString(),
+            $"Reversal: {charge.Description} ({folio.FolioNumber})", ct);
         db.Touch(folio);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
@@ -144,17 +148,29 @@ internal sealed class FolioService(
     public async Task<FolioCharge> PostAsync(BranchScope scope, Folio folio, ChargeType type, string description, decimal quantity,
         decimal unitPrice, bool taxable, string? idempotencyKey, Guid? serviceItemId, DateOnly? businessDate, CancellationToken ct)
     {
+        var (charge, created) = await PostCoreAsync(scope, folio, type, description, quantity, unitPrice, taxable, idempotencyKey, serviceItemId, businessDate, ct);
+        if (created.Count > 0)
+            await ledger.PostFolioChargesAsync(scope, created, "FolioCharge", charge.Id.ToString(), $"{description} ({folio.FolioNumber})", ct);
+        return charge;
+    }
+
+    /// <summary>Adds the charge (and its exclusive taxes) and returns the charge plus the lines actually created.</summary>
+    private async Task<(FolioCharge Charge, List<FolioCharge> Created)> PostCoreAsync(BranchScope scope, Folio folio, ChargeType type,
+        string description, decimal quantity, decimal unitPrice, bool taxable, string? idempotencyKey, Guid? serviceItemId,
+        DateOnly? businessDate, CancellationToken ct)
+    {
         folio.EnsureOpen();
         if (idempotencyKey is not null)
         {
             var existing = db.FolioCharges.Local.FirstOrDefault(c => c.FolioId == folio.Id && c.IdempotencyKey == idempotencyKey)
                 ?? await db.FolioCharges.SingleOrDefaultAsync(c => c.FolioId == folio.Id && c.IdempotencyKey == idempotencyKey, ct);
-            if (existing is not null) return existing; // retried request: no duplicate charge
+            if (existing is not null) return (existing, []); // retried request: no duplicate charge
         }
 
         var date = businessDate ?? scope.BusinessDate;
         var charge = new FolioCharge(scope.CompanyId, scope.BranchId, folio.Id, type, description, quantity, unitPrice, date, idempotencyKey, serviceItemId);
         db.FolioCharges.Add(charge);
+        var created = new List<FolioCharge> { charge };
 
         if (taxable && charge.Amount > 0)
         {
@@ -166,30 +182,37 @@ internal sealed class FolioService(
                     1, amount, date, idempotencyKey is null ? null : $"{idempotencyKey}:TAX:{tax.Code}");
                 taxCharge.LinkToParent(charge.Id);
                 db.FolioCharges.Add(taxCharge);
+                created.Add(taxCharge);
             }
         }
         db.Touch(folio);
-        return charge;
+        return (charge, created);
     }
 
     public async Task PostRoomChargesAsync(BranchScope scope, Folio folio, Reservation reservation, CancellationToken ct)
     {
         var nights = await db.ReservationNights.AsNoTracking().Where(n => n.ReservationId == reservation.Id).OrderBy(n => n.Date).ToListAsync(ct);
+        var created = new List<FolioCharge>();
         foreach (var night in nights)
         {
             var description = night.Discount > 0
                 ? $"Room {night.Date:yyyy-MM-dd} ({reservation.RatePlanName}, discount {night.Discount:N2})"
                 : $"Room {night.Date:yyyy-MM-dd} ({reservation.RatePlanName})";
-            var charge = await PostAsync(scope, folio, ChargeType.Room, description, 1, night.Net, false,
+            var (charge, roomLines) = await PostCoreAsync(scope, folio, ChargeType.Room, description, 1, night.Net, false,
                 $"ROOM:{reservation.Id}:{night.Date:yyyyMMdd}", null, night.Date, ct);
+            created.AddRange(roomLines);
 
             if (night.TaxAmount > 0)
             {
-                var tax = await PostAsync(scope, folio, ChargeType.Tax, $"Room taxes {night.Date:yyyy-MM-dd}", 1, night.TaxAmount, false,
+                var (tax, taxLines) = await PostCoreAsync(scope, folio, ChargeType.Tax, $"Room taxes {night.Date:yyyy-MM-dd}", 1, night.TaxAmount, false,
                     $"ROOMTAX:{reservation.Id}:{night.Date:yyyyMMdd}", null, night.Date, ct);
                 tax.LinkToParent(charge.Id);
+                created.AddRange(taxLines);
             }
         }
+        // One journal for the stay's room charges, posted on the check-in business date.
+        await ledger.PostFolioChargesAsync(scope, created, "RoomCharges", reservation.Id.ToString(),
+            $"Room charges {reservation.ReservationNumber} ({folio.FolioNumber})", ct);
     }
 
     public async Task ReverseRoomChargesFromAsync(BranchScope scope, Folio folio, DateOnly fromNight, string reason, CancellationToken ct)
@@ -198,7 +221,10 @@ internal sealed class FolioService(
             .Where(c => c.FolioId == folio.Id && c.Type == ChargeType.Room && c.BusinessDate >= fromNight
                         && c.ReversesChargeId == null && c.ReversedByChargeId == null)
             .ToListAsync(ct);
-        foreach (var charge in charges) await ReverseWithTaxAsync(scope, charge, reason, ct);
+        var reversals = new List<FolioCharge>();
+        foreach (var charge in charges) reversals.AddRange(await ReverseWithTaxAsync(scope, charge, reason, ct));
+        await ledger.PostFolioChargesAsync(scope, reversals, "RoomChargeReversal", $"{folio.Id}:{fromNight:yyyyMMdd}",
+            $"Room charges reversed from {fromNight:yyyy-MM-dd}: {reason} ({folio.FolioNumber})", ct);
     }
 
     public async Task<FolioBalance> GetBalanceAsync(Guid folioId, CancellationToken ct)
@@ -248,16 +274,18 @@ internal sealed class FolioService(
         return invoice;
     }
 
-    private async Task ReverseWithTaxAsync(BranchScope scope, FolioCharge charge, string reason, CancellationToken ct)
+    private async Task<List<FolioCharge>> ReverseWithTaxAsync(BranchScope scope, FolioCharge charge, string reason, CancellationToken ct)
     {
-        db.FolioCharges.Add(charge.CreateReversal(scope.BusinessDate, reason));
+        var created = new List<FolioCharge> { charge.CreateReversal(scope.BusinessDate, reason) };
         var taxes = await db.FolioCharges.Where(c => c.ParentChargeId == charge.Id && c.ReversedByChargeId == null).ToListAsync(ct);
         foreach (var tax in taxes)
         {
             var reversal = tax.CreateReversal(scope.BusinessDate, reason);
             reversal.LinkToParent(charge.Id);
-            db.FolioCharges.Add(reversal);
+            created.Add(reversal);
         }
+        db.FolioCharges.AddRange(created);
+        return created;
     }
 
     internal async Task<FolioDto> ToDtoAsync(Folio folio, CancellationToken ct)
@@ -270,7 +298,7 @@ internal sealed class FolioService(
         var refunds = await db.Refunds.AsNoTracking().Where(r => r.FolioId == folio.Id).ToListAsync(ct);
 
         return new FolioDto(folio.Id, folio.FolioNumber, folio.ReservationId, folio.Reservation?.ReservationNumber ?? string.Empty,
-            folio.StayId, folio.Guest?.FullName ?? string.Empty, folio.Currency, folio.Status.ToString(),
+            folio.StayId, folio.Guest?.FullName ?? folio.Name ?? string.Empty, folio.Currency, folio.Status.ToString(),
             balance.TotalCharges, balance.TotalTax, balance.ConfirmedPayments, balance.PendingPayments, balance.ExecutedRefunds, balance.Balance,
             charges.OrderBy(c => c.BusinessDate).ThenBy(c => c.CreatedAtUtc)
                 .Select(c => new FolioChargeDto(c.Id, c.Type.ToString(), c.Description, c.Quantity, c.UnitPrice, c.Amount, c.BusinessDate,

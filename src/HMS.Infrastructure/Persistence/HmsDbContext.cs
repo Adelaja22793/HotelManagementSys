@@ -41,10 +41,54 @@ public class HmsDbContext(DbContextOptions<HmsDbContext> options)
     public DbSet<CashierShift> CashierShifts => Set<CashierShift>();
     public DbSet<CashierMovement> CashierMovements => Set<CashierMovement>();
 
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<StockLocation> StockLocations => Set<StockLocation>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<StockBalance> StockBalances => Set<StockBalance>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<PurchaseRequisition> PurchaseRequisitions => Set<PurchaseRequisition>();
+    public DbSet<PurchaseRequisitionLine> PurchaseRequisitionLines => Set<PurchaseRequisitionLine>();
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+    public DbSet<PurchaseOrderLine> PurchaseOrderLines => Set<PurchaseOrderLine>();
+    public DbSet<GoodsReceipt> GoodsReceipts => Set<GoodsReceipt>();
+    public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
+    public DbSet<SupplierInvoice> SupplierInvoices => Set<SupplierInvoice>();
+    public DbSet<SupplierInvoiceLine> SupplierInvoiceLines => Set<SupplierInvoiceLine>();
+    public DbSet<SupplierPayment> SupplierPayments => Set<SupplierPayment>();
+    public DbSet<RestaurantOutlet> RestaurantOutlets => Set<RestaurantOutlet>();
+    public DbSet<RestaurantTable> RestaurantTables => Set<RestaurantTable>();
+    public DbSet<MenuCategory> MenuCategories => Set<MenuCategory>();
+    public DbSet<MenuItem> MenuItems => Set<MenuItem>();
+    public DbSet<MenuItemIngredient> MenuItemIngredients => Set<MenuItemIngredient>();
+    public DbSet<RestaurantOrder> RestaurantOrders => Set<RestaurantOrder>();
+    public DbSet<RestaurantOrderLine> RestaurantOrderLines => Set<RestaurantOrderLine>();
+    public DbSet<KitchenTicket> KitchenTickets => Set<KitchenTicket>();
+    public DbSet<KitchenTicketLine> KitchenTicketLines => Set<KitchenTicketLine>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
+    public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+    public DbSet<WorkOrderPartUsage> WorkOrderParts => Set<WorkOrderPartUsage>();
+    public DbSet<PreventiveMaintenancePlan> PreventivePlans => Set<PreventiveMaintenancePlan>();
+    public DbSet<PreventiveMaintenanceOccurrence> PreventiveOccurrences => Set<PreventiveMaintenanceOccurrence>();
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<WorkShift> WorkShifts => Set<WorkShift>();
+    public DbSet<RosterEntry> RosterEntries => Set<RosterEntry>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    public DbSet<LeaveRecord> LeaveRecords => Set<LeaveRecord>();
+    public DbSet<OvertimeRequest> OvertimeRequests => Set<OvertimeRequest>();
+    public DbSet<ShiftHandover> ShiftHandovers => Set<ShiftHandover>();
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<AccountMapping> AccountMappings => Set<AccountMapping>();
+    public DbSet<AccountingPeriod> AccountingPeriods => Set<AccountingPeriod>();
+    public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(HmsDbContext).Assembly);
+        if (Database.IsSqlServer()) Configurations.DecimalCheckConstraints.Apply(builder);
 
         foreach (var entity in builder.Model.GetEntityTypes())
         {

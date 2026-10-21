@@ -74,13 +74,23 @@ internal sealed class HotelSetup
         Today = branch.CurrentBusinessDate;
     }
 
-    public async Task<HttpClient> StaffAsync(params string[] roles)
+    public async Task<HttpClient> StaffAsync(params string[] roles) => (await StaffWithIdAsync(roles)).Client;
+
+    public async Task<(HttpClient Client, string UserId)> StaffWithIdAsync(params string[] roles)
     {
         var email = $"staff{Guid.NewGuid():N}@hms.test";
-        await ApiAssert.OkAsync<UserDto>(await Admin.PostAsJsonAsync("/api/v1/users",
+        var created = await ApiAssert.OkAsync<UserDto>(await Admin.PostAsJsonAsync("/api/v1/users",
             new CreateUserRequest(email, "Staff", StaffPassword, roles, [Branch.Id], Branch.Id)), HttpStatusCode.Created);
         var (client, _) = await Factory.LoginAsync(email, StaffPassword);
-        return client;
+        return (client, created.Id);
+    }
+
+    /// <summary>POST with a fresh (or given) Idempotency-Key header.</summary>
+    public static Task<HttpResponseMessage> PostKeyedAsync<T>(HttpClient client, string url, T body, string? key = null)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
+        message.Headers.Add("Idempotency-Key", key ?? Guid.NewGuid().ToString());
+        return client.SendAsync(message);
     }
 
     public static CreateReservationRequest Booking(Guid roomTypeId, DateOnly arrival, int nights, string lastName = "Okafor", decimal discount = 0) =>
