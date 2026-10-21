@@ -6,6 +6,7 @@ public interface IDialogService
 {
     void ShowError(string message, string? traceId = null);
     void ShowInfo(string message);
+    bool Confirm(string message) => false;
 }
 
 internal sealed class DialogService : IDialogService
@@ -15,4 +16,7 @@ internal sealed class DialogService : IDialogService
 
     public void ShowInfo(string message) =>
         MessageBox.Show(message, "HMS", MessageBoxButton.OK, MessageBoxImage.Information);
+
+    public bool Confirm(string message) =>
+        MessageBox.Show(message, "HMS", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 }

@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HMS.Contracts\HMS.Contracts.csproj" />
+    <ProjectReference Include="..\HMS.Updater\HMS.Updater.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />

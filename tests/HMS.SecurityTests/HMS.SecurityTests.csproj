@@ -13,6 +13,7 @@
   <ItemGroup>
     <!-- Reuses the API test host (fake payment gateway, scanner, clock) and the hotel setup helpers. -->
     <ProjectReference Include="..\HMS.Api.IntegrationTests\HMS.Api.IntegrationTests.csproj" />
+    <ProjectReference Include="..\..\src\HMS.Updater\HMS.Updater.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
