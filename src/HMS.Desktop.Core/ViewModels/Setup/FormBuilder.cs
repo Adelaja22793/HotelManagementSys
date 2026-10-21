@@ -106,9 +106,23 @@ public static class FormBuilder
             }
             else if (list is not null && p.ParameterType.IsInstanceOfType(list))
                 args.Add(list);
+            else if (existing is not null && ListParameter(requestType) is { } lp && lp.Parameter.Name == p.Name
+                     && SetupEntity.HasProperty(existing, name) && SetupEntity.Read(existing, name) is IEnumerable kept)
+                args.Add(CarryList(lp.ItemType, kept)); // keep what the form cannot edit, such as a dish's recipe
             else
                 args.Add(p.HasDefaultValue ? p.DefaultValue : null);
         }
         return ctor.Invoke([.. args]);
+    }
+
+    /// <summary>Copies a saved list (for example a menu item's ingredients) into the request's item type, matching by name.</summary>
+    private static IList CarryList(Type itemType, IEnumerable saved)
+    {
+        var result = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType))!;
+        var ctor = Constructor(itemType);
+        foreach (var entry in saved)
+            result.Add(ctor.Invoke([.. ctor.GetParameters().Select(p =>
+                SetupEntity.HasProperty(entry, Pascal(p.Name!)) ? SetupEntity.Read(entry, Pascal(p.Name!)) : p.HasDefaultValue ? p.DefaultValue : null)]));
+        return result;
     }
 }
