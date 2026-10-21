@@ -2,6 +2,7 @@ using System.IO;
 using System.Net.Http;
 using System.Windows;
 using HMS.Desktop.Services;
+using HMS.Desktop.Services.LocalServer;
 using HMS.Desktop.ViewModels;
 using HMS.Desktop.Views;
 using Microsoft.Extensions.Configuration;
@@ -13,19 +14,48 @@ namespace HMS.Desktop;
 public partial class App : Application
 {
     private IHost? _host;
+    private LocalServer? _localServer;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        // Windows come and go during start-up (setup, then sign-in), so shut down only when told to.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddCommandLine(e.Args)
+            .Build();
+
+        // "Local" (the default): this app runs the HMS server itself, so staff only open one program.
+        // "Remote": connect to a shared HMS server at Api:BaseUrl.
+        string baseUrl;
+        string? signInEmail = null;
+        if (string.Equals(configuration["Api:Mode"] ?? "Local", "Local", StringComparison.OrdinalIgnoreCase))
+        {
+            var options = configuration.GetSection(LocalServerOptions.SectionName).Get<LocalServerOptions>() ?? new LocalServerOptions();
+            _localServer = new LocalServer(options, new DpapiSecretProtector());
+            var startup = new StartupViewModel(_localServer);
+            if (new StartupWindow(startup).ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+            baseUrl = _localServer.BaseAddress!.ToString();
+            signInEmail = startup.SignInEmail;
+        }
+        else
+        {
+            baseUrl = configuration["Api:BaseUrl"] ?? throw new InvalidOperationException("Api:BaseUrl is not configured.");
+            if (!baseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Api:BaseUrl must use HTTPS.");
+        }
 
         _host = Host.CreateDefaultBuilder(e.Args)
             .ConfigureAppConfiguration(config => config.AddJsonFile("appsettings.json", optional: false))
             .ConfigureServices((context, services) =>
             {
-                var baseUrl = context.Configuration["Api:BaseUrl"] ?? throw new InvalidOperationException("Api:BaseUrl is not configured.");
-                if (!baseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException("Api:BaseUrl must use HTTPS.");
-
                 services.AddSingleton<SessionState>();
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddHttpClient<ApiClient>(client =>
@@ -46,13 +76,14 @@ public partial class App : Application
             .Build();
 
         await _host.StartAsync();
-        ShowLogin();
+        ShowLogin(signInEmail);
     }
 
-    private void ShowLogin()
+    private void ShowLogin(string? email = null)
     {
         var login = _host!.Services.GetRequiredService<LoginWindow>();
         var vm = (LoginViewModel)login.DataContext;
+        if (email is not null) vm.Email = email;
         vm.Completed += (_, _) =>
         {
             ShowShell();
@@ -63,6 +94,7 @@ public partial class App : Application
             if (_host.Services.GetRequiredService<SessionState>().Branch is null) Shutdown();
         };
         login.Show();
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
     }
 
     private void ShowShell()
@@ -112,6 +144,7 @@ public partial class App : Application
             await _host.StopAsync(TimeSpan.FromSeconds(2));
             _host.Dispose();
         }
+        if (_localServer is not null) await _localServer.StopAsync();
         base.OnExit(e);
     }
 }

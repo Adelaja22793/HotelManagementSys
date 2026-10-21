@@ -155,6 +155,7 @@ builder.Services.AddOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions
 builder.Services.Configure<BackgroundJobsOptions>(builder.Configuration.GetSection(BackgroundJobsOptions.SectionName));
 builder.Services.AddSingleton<BackgroundJobRunner>();
 builder.Services.AddHostedService<BackgroundJobsWorker>();
+builder.Services.AddHostedService<ParentProcessWatcher>();
 
 builder.Services.AddOpenApi();
 
