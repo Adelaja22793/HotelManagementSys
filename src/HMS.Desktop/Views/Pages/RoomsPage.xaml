@@ -1,0 +1,51 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.RoomsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <TabControl>
+        <TabItem Header="Room board">
+            <DockPanel Margin="8">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Label}" Text="Status " VerticalAlignment="Center" />
+                    <ComboBox Width="150" ItemsSource="{x:Static vm:RoomsPageViewModel.StatusFilters}" SelectedItem="{Binding StatusFilter}" />
+                    <TextBlock Text="{Binding Summary}" Margin="16,0,0,0" VerticalAlignment="Center" Foreground="#52606D" />
+                </StackPanel>
+                <DataGrid ItemsSource="{Binding Rooms}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Room" Binding="{Binding RoomNumber}" />
+                        <DataGridTextColumn Header="Floor" Binding="{Binding Floor}" />
+                        <DataGridTextColumn Header="Type" Binding="{Binding RoomTypeCode}" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
+                        <DataGridTextColumn Header="Blocked today" Binding="{Binding IsBlockedToday}" />
+                        <DataGridTextColumn Header="Active" Binding="{Binding IsActive}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </TabItem>
+        <TabItem Header="Room types">
+            <DataGrid ItemsSource="{Binding RoomTypes}" Margin="8">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="Adults" Binding="{Binding MaxAdults}" />
+                    <DataGridTextColumn Header="Children" Binding="{Binding MaxChildren}" />
+                    <DataGridTextColumn Header="Base rate" Binding="{Binding BaseRate, StringFormat=N2}" />
+                    <DataGridTextColumn Header="Rooms" Binding="{Binding RoomCount}" />
+                    <DataGridTextColumn Header="Active" Binding="{Binding IsActive}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </TabItem>
+        <TabItem Header="Rate plans">
+            <DataGrid ItemsSource="{Binding RatePlans}" Margin="8">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Refundable" Binding="{Binding IsRefundable}" />
+                    <DataGridTextColumn Header="Deposit %" Binding="{Binding DepositPercent}" />
+                    <DataGridTextColumn Header="Cancellation policy" Binding="{Binding CancellationPolicy}" Width="*" />
+                    <DataGridTextColumn Header="Active" Binding="{Binding IsActive}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </TabItem>
+    </TabControl>
+</UserControl>

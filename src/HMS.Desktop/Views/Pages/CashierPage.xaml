@@ -1,0 +1,34 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.CashierPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+        <StackPanel Visibility="{Binding Shift, Converter={StaticResource NotNullToVis}, ConverterParameter=invert}">
+            <TextBlock Style="{StaticResource SectionTitle}" Text="You have no open shift" />
+            <TextBlock Style="{StaticResource Label}" Text="Opening float (cash in the drawer)" />
+            <TextBox Width="160" HorizontalAlignment="Left" Text="{Binding OpeningFloat}" />
+            <Button Content="Open shift" Command="{Binding OpenShiftCommand}" HorizontalAlignment="Left" />
+        </StackPanel>
+        <StackPanel Visibility="{Binding Shift, Converter={StaticResource NotNullToVis}}">
+            <TextBlock Style="{StaticResource SectionTitle}"><Run Text="Shift for " /><Run Text="{Binding Shift.BusinessDate, Converter={StaticResource DateOnly}, Mode=OneWay}" /> (<Run Text="{Binding Shift.Status, Mode=OneWay}" />)</TextBlock>
+            <WrapPanel>
+                <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Float" /><TextBlock FontSize="18" Text="{Binding Shift.OpeningFloat, StringFormat=N2}" /></StackPanel></Border>
+                <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Cash expected in drawer" /><TextBlock FontSize="18" Text="{Binding Shift.RunningCash, StringFormat=N2}" /></StackPanel></Border>
+                <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="POS" /><TextBlock FontSize="18" Text="{Binding Shift.RunningPos, StringFormat=N2}" /></StackPanel></Border>
+                <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Transfers" /><TextBlock FontSize="18" Text="{Binding Shift.RunningTransfer, StringFormat=N2}" /></StackPanel></Border>
+            </WrapPanel>
+            <StackPanel Visibility="{Binding HasOpenShift, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource SectionTitle}" Text="Close the shift" />
+                <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap" Text="Count the drawer, including the float, and enter the POS and transfer totals you checked. Expected amounts are worked out by the server." />
+                <TextBlock Style="{StaticResource Label}" Text="Counted cash" /><TextBox Width="160" HorizontalAlignment="Left" Text="{Binding CountedCash, TargetNullValue=''}" />
+                <TextBlock Style="{StaticResource Label}" Text="Verified POS" /><TextBox Width="160" HorizontalAlignment="Left" Text="{Binding VerifiedPos, TargetNullValue=''}" />
+                <TextBlock Style="{StaticResource Label}" Text="Verified transfers" /><TextBox Width="160" HorizontalAlignment="Left" Text="{Binding VerifiedTransfer, TargetNullValue=''}" />
+                <TextBlock Style="{StaticResource Label}" Text="Explanation if it does not balance" /><TextBox Text="{Binding VarianceExplanation}" />
+                <Button Content="Close shift" Command="{Binding CloseShiftCommand}" HorizontalAlignment="Left" />
+            </StackPanel>
+            <StackPanel Visibility="{Binding Shift.CashVariance, Converter={StaticResource NotNullToVis}}">
+                <TextBlock Margin="0,8,0,0"><Run Text="Cash variance: " /><Run FontWeight="SemiBold" Text="{Binding Shift.CashVariance, StringFormat=N2, Mode=OneWay}" /></TextBlock>
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

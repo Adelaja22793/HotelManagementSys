@@ -76,6 +76,15 @@ internal sealed class HotelSetup
 
     public async Task<HttpClient> StaffAsync(params string[] roles) => (await StaffWithIdAsync(roles)).Client;
 
+    /// <summary>Creates a staff account for this branch and returns its email; the password is <see cref="StaffPassword"/>.</summary>
+    public async Task<string> CreateStaffAsync(params string[] roles)
+    {
+        var email = $"staff{Guid.NewGuid():N}@hms.test";
+        await ApiAssert.OkAsync<UserDto>(await Admin.PostAsJsonAsync("/api/v1/users",
+            new CreateUserRequest(email, "Staff", StaffPassword, roles, [Branch.Id], Branch.Id)), HttpStatusCode.Created);
+        return email;
+    }
+
     public async Task<(HttpClient Client, string UserId)> StaffWithIdAsync(params string[] roles)
     {
         var email = $"staff{Guid.NewGuid():N}@hms.test";

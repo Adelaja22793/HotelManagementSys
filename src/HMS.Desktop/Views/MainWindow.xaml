@@ -1,13 +1,17 @@
 <Window x:Class="HMS.Desktop.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{Binding Title}" Width="1200" Height="760"
+        Title="{Binding Title}" Width="1280" Height="800" MinWidth="960" MinHeight="600"
         WindowStartupLocation="CenterScreen">
+    <Window.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+    </Window.InputBindings>
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="#1F3A5F" Padding="16,10">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Sign out" Padding="10,4" Command="{Binding SignOutCommand}" />
-                <StackPanel Orientation="Horizontal">
+                <Button DockPanel.Dock="Right" Content="Sign out" Command="{Binding SignOutCommand}" Margin="0" />
+                <Button DockPanel.Dock="Right" Content="Refresh (F5)" Command="{Binding RefreshCommand}" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Session.Branch.Name}" Foreground="White" FontSize="16" FontWeight="SemiBold" />
                     <TextBlock Text="  |  " Foreground="#9FB3C8" FontSize="16" />
                     <TextBlock Text="{Binding Session.User.FullName}" Foreground="#D9E2EC" FontSize="16" />
@@ -15,32 +19,44 @@
             </DockPanel>
         </Border>
 
-        <ListBox DockPanel.Dock="Left" Width="240" ItemsSource="{Binding Modules}" BorderThickness="0" Background="#F0F4F8">
+        <ListBox DockPanel.Dock="Left" Width="230" ItemsSource="{Binding Modules}" SelectedItem="{Binding SelectedModule}"
+                 BorderThickness="0" Background="#F0F4F8">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
+                    <Setter Property="Padding" Value="10,7" />
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="8,6">
+                    <StackPanel>
                         <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-                        <TextBlock Foreground="Gray" FontSize="11">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="{Binding Phase, StringFormat=Coming in phase {0}}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsAvailable}" Value="True">
-                                            <Setter Property="Text" Value="Available" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                        <TextBlock Text="Not yet on the desktop" Foreground="Gray" FontSize="11"
+                                   Visibility="{Binding PageType, Converter={StaticResource NotNullToVis}, ConverterParameter=invert}" />
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <StackPanel Margin="32">
-            <TextBlock Text="Dashboard" FontSize="24" FontWeight="SemiBold" />
-            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="Gray"
-                       Text="Signed in. Operational modules appear here as each delivery phase is completed." />
-        </StackPanel>
+        <DockPanel Margin="24,16">
+            <StackPanel DockPanel.Dock="Top" DataContext="{Binding CurrentPage}">
+                <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
+                <ProgressBar IsIndeterminate="True" Height="3" Margin="0,6,0,0"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                <Border Background="#FDECEA" Padding="10,6" Margin="0,8,0,0"
+                        Visibility="{Binding ErrorMessage, Converter={StaticResource NotNullToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#8A1C1C" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding TraceId, StringFormat=Reference for support: {0}}" Foreground="#8A1C1C" FontSize="11"
+                                   Visibility="{Binding TraceId, Converter={StaticResource NotNullToVis}}" />
+                    </StackPanel>
+                </Border>
+                <Border Background="#E3F9E5" Padding="10,6" Margin="0,8,0,0"
+                        Visibility="{Binding StatusMessage, Converter={StaticResource NotNullToVis}}">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#05400A" TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+            <ContentControl Content="{Binding CurrentPage}" Margin="0,12,0,0" Focusable="False" />
+        </DockPanel>
     </DockPanel>
 </Window>

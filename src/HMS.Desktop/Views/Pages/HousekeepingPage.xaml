@@ -1,0 +1,29 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.HousekeepingPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <DockPanel>
+        <CheckBox DockPanel.Dock="Top" Content="Open tasks only" IsChecked="{Binding OpenOnly}" Margin="0,0,0,6" />
+        <StackPanel DockPanel.Dock="Bottom">
+            <TextBlock Style="{StaticResource Label}" Text="Notes (required when an inspection fails)" />
+            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Start" Command="{Binding StartCommand}" Visibility="{Binding CanWork, Converter={StaticResource BoolToVis}}" />
+                <Button Content="Done" Command="{Binding CompleteCommand}" Visibility="{Binding CanWork, Converter={StaticResource BoolToVis}}" />
+                <Button Content="Inspection passed" Command="{Binding PassCommand}" Visibility="{Binding CanInspect, Converter={StaticResource BoolToVis}}" />
+                <Button Content="Inspection failed" Command="{Binding FailCommand}" Visibility="{Binding CanInspect, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+        </StackPanel>
+        <DataGrid ItemsSource="{Binding Tasks}" SelectedItem="{Binding Selected}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Room" Binding="{Binding RoomNumber}" />
+                <DataGridTextColumn Header="Room status" Binding="{Binding RoomStatus}" />
+                <DataGridTextColumn Header="Task" Binding="{Binding Type}" />
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                <DataGridTextColumn Header="Date" Binding="{Binding BusinessDate, Converter={StaticResource DateOnly}}" />
+                <DataGridTextColumn Header="Returned because" Binding="{Binding RejectionReason}" />
+                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

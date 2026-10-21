@@ -36,6 +36,9 @@ public partial class App : Application
                 services.AddSingleton(context.Configuration.GetSection("Updates").Get<DesktopUpdateOptions>() ?? new DesktopUpdateOptions());
                 services.AddHttpClient<UpdateService>(client => client.Timeout = TimeSpan.FromMinutes(10));
                 services.AddTransient<LoginViewModel>();
+                services.AddSingleton<NavigationService>(sp => new NavigationService(type => (PageViewModel)sp.GetRequiredService(type)));
+                foreach (var page in typeof(PageViewModel).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(PageViewModel)) && !t.IsAbstract))
+                    services.AddTransient(page);
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<LoginWindow>();
                 services.AddTransient<MainWindow>();
@@ -77,6 +80,7 @@ public partial class App : Application
         };
         MainWindow = shell;
         shell.Show();
+        _ = vm.StartAsync();
         _ = OfferUpdateAsync();
     }
 
