@@ -15,6 +15,12 @@ public class RatePlan : BranchEntity, IConcurrencyTracked
         Update(name, true, 0, "Free cancellation until 24 hours before arrival.");
     }
 
+    /// <summary>Code of the plan every new hotel starts with, so it can sell rooms at each room type's base rate.</summary>
+    public const string DefaultCode = "BAR";
+
+    /// <summary>The starting plan: best available rate, refundable, no deposit, priced from each room type's base rate.</summary>
+    public static RatePlan CreateDefault(Guid companyId, Guid branchId) => new(companyId, branchId, DefaultCode, "Best available rate");
+
     public string Code { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public bool IsRefundable { get; private set; }
