@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local dev output (email pickup folder, documents)
+**/App_Data/

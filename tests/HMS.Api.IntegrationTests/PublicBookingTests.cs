@@ -161,6 +161,8 @@ public class PublicBookingTests(HmsApiFactory factory) : IClassFixture<HmsApiFac
         var booking = await VerifyAsync(guest, payment.MerchantReference);
         Assert.Equal(2, booking.Reservations.Count);
         Assert.All(booking.Reservations, r => Assert.Equal(52_500m, r.TotalAmount));
+        Assert.Equal(105_000m, booking.TotalAmount);
+        Assert.Equal(105_000m, booking.AmountPaid);
     }
 
     // ---------- inventory protection ----------

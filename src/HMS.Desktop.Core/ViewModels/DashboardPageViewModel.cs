@@ -10,8 +10,16 @@ public sealed partial class DashboardPageViewModel(ApiClient api, SessionState s
 {
     public override string Title => "Dashboard";
 
-    [ObservableProperty] private FrontDeskSummaryDto? _today;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ArrivalsToday), nameof(DeparturesToday))]
+    private FrontDeskSummaryDto? _today;
     [ObservableProperty] private DashboardDto? _week;
+
+    /// <summary>"3 of 5": arrivals checked in out of all arrivals due today (the API counts those still to come separately).</summary>
+    public string ArrivalsToday => Today is { } t ? $"{t.ArrivalsCheckedIn} of {t.ArrivalsCheckedIn + t.ArrivalsExpected}" : "";
+
+    /// <summary>"1 of 4": departures checked out out of all departures due today.</summary>
+    public string DeparturesToday => Today is { } t ? $"{t.DeparturesCheckedOut} of {t.DeparturesCheckedOut + t.DeparturesExpected}" : "";
 
     public bool CanSeeFrontDesk => session.HasPermission(PermissionNames.FrontDeskCheckIn) || session.HasPermission(PermissionNames.ReservationsView);
     public bool CanSeeMetrics => session.HasPermission(PermissionNames.ReportsView);

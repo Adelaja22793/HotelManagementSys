@@ -139,6 +139,8 @@ public sealed class ScreenFlowTests(HmsApiFactory factory) : IClassFixture<HmsAp
         Ok(dashboard);
         Assert.NotNull(dashboard.Today);
         Assert.NotNull(dashboard.Week);
+        Assert.Equal("0 of 0", dashboard.DeparturesToday);
+        Assert.Equal($"0 of {dashboard.Today!.ArrivalsExpected}", dashboard.ArrivalsToday);
 
         var rooms = new RoomsPageViewModel(desk.Api);
         await rooms.LoadAsync();
