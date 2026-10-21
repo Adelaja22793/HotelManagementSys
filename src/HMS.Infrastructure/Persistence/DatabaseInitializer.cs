@@ -36,6 +36,16 @@ public static class DatabaseInitializer
         await BootstrapAsync(sp, db, logger, cancellationToken);
         await EnsureSequencesAsync(sp, db, cancellationToken);
         await EnsureChartOfAccountsAsync(sp, db, cancellationToken);
+        await EnsureRatePlansAsync(db, cancellationToken);
+    }
+
+    /// <summary>A hotel without any rate plan cannot take a booking, so each one gets the default plan.</summary>
+    private static async Task EnsureRatePlansAsync(HmsDbContext db, CancellationToken ct)
+    {
+        var missing = await db.Branches.Where(b => !db.RatePlans.Any(p => p.BranchId == b.Id))
+            .Select(b => new { b.Id, b.CompanyId }).ToListAsync(ct);
+        foreach (var branch in missing) db.RatePlans.Add(RatePlan.CreateDefault(branch.CompanyId, branch.Id));
+        await db.SaveChangesAsync(ct);
     }
 
     private static async Task EnsureChartOfAccountsAsync(IServiceProvider sp, HmsDbContext db, CancellationToken ct)

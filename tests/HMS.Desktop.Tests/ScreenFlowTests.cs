@@ -47,12 +47,16 @@ public sealed class ScreenFlowTests(HmsApiFactory factory) : IClassFixture<HmsAp
         reservations.NewArrival = today;
         reservations.NewDeparture = today.AddDays(2);
         reservations.Adults = 2;
+        // Like a WPF button: enabled state is only re-read when the command says it changed.
+        var bookEnabled = reservations.BookCommand.CanExecute(null);
+        reservations.BookCommand.CanExecuteChanged += (_, _) => bookEnabled = reservations.BookCommand.CanExecute(null);
         await reservations.CheckAvailabilityCommand.ExecuteAsync(null);
         Ok(reservations);
         Assert.Equal(hotel.Standard.Id, reservations.SelectedRoomType?.RoomTypeId);
         reservations.FirstName = "Chidi";
         reservations.LastName = "Eze";
         reservations.Phone = "+2348011111111";
+        Assert.True(bookEnabled, "The Book button must be enabled once a room type is picked.");
         await reservations.BookCommand.ExecuteAsync(null);
         Ok(reservations);
         var booking = reservations.Selected!;

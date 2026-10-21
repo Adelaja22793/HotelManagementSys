@@ -26,7 +26,7 @@ public interface IPricingService
 
 internal sealed class PricingService(IApplicationDbContext db, ICurrentUser user) : IPricingService
 {
-    public const string DefaultRatePlanCode = "BAR";
+    public const string DefaultRatePlanCode = RatePlan.DefaultCode;
 
     public async Task<PricedStay> PriceAsync(Branch branch, Guid roomTypeId, Guid? ratePlanId, StayDates dates, int adults, int children,
         decimal discountPercent, CancellationToken ct)

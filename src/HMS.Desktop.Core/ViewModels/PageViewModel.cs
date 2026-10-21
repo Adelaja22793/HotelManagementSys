@@ -20,6 +20,17 @@ public abstract partial class PageViewModel : ObservableObject
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _traceId;
 
+    /// <summary>
+    /// Buttons whose command checks <see cref="IsBusy"/> only look again when told to. Without this, a button that
+    /// became usable while the screen was busy (for example Book after checking availability) stayed greyed out.
+    /// </summary>
+    partial void OnIsBusyChanged(bool value)
+    {
+        foreach (var property in GetType().GetProperties())
+            if (typeof(IRelayCommand).IsAssignableFrom(property.PropertyType) && property.GetIndexParameters().Length == 0)
+                (property.GetValue(this) as IRelayCommand)?.NotifyCanExecuteChanged();
+    }
+
     /// <summary>Loads the screen's data. Called when the screen opens and by Refresh.</summary>
     public virtual Task LoadAsync() => Task.CompletedTask;
 

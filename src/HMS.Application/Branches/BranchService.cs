@@ -58,6 +58,7 @@ internal sealed class BranchService(
         var branch = new Branch(companyId, request.Name, code, request.TimeZoneId ?? Branch.DefaultTimeZoneId, request.Currency);
         branch.Update(branch.Name, branch.TimeZoneId, branch.Currency, request.AddressLine, request.City, request.Phone);
         db.Branches.Add(branch);
+        db.RatePlans.Add(RatePlan.CreateDefault(companyId, branch.Id)); // so rooms can be booked as soon as they exist
         await numbers.EnsureCountersAsync(branch.Id, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return ToDto(branch);

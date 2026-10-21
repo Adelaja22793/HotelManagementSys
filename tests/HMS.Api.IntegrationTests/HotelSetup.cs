@@ -59,8 +59,8 @@ internal sealed class HotelSetup
             setup.Rooms.Add(await ApiAssert.OkAsync<RoomDto>(await admin.PostAsJsonAsync(setup.P("rooms"),
                 new CreateRoomRequest($"{100 + i}", setup.Standard.Id, "1")), HttpStatusCode.Created));
         }
-        setup.Bar = await ApiAssert.OkAsync<RatePlanDto>(await admin.PostAsJsonAsync(setup.P("rate-plans"),
-            new CreateRatePlanRequest("BAR", "Best Available Rate", true, 0, "Free cancellation until 24h before arrival.")), HttpStatusCode.Created);
+        // Every new branch starts with the default "BAR" plan.
+        setup.Bar = (await ApiAssert.OkAsync<List<RatePlanDto>>(await admin.GetAsync(setup.P("rate-plans")))).Single(p => p.Code == "BAR");
         await ApiAssert.OkAsync<TaxRuleDto>(await admin.PostAsJsonAsync(setup.P("tax-rules"),
             new CreateTaxRuleRequest("VAT", "VAT", 5, "All", false, new DateOnly(2020, 1, 1), null)), HttpStatusCode.Created);
         setup.Laundry = await ApiAssert.OkAsync<ServiceItemDto>(await admin.PostAsJsonAsync(setup.P("service-items"),
