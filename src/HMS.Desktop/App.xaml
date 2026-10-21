@@ -59,5 +59,8 @@
         <DataTemplate DataType="{x:Type vm:HousekeepingPageViewModel}"><pages:HousekeepingPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:RoomsPageViewModel}"><pages:RoomsPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:GuestsPageViewModel}"><pages:GuestsPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RestaurantPageViewModel}"><pages:RestaurantPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MaintenancePageViewModel}"><pages:MaintenancePage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:InventoryPageViewModel}"><pages:InventoryPage /></DataTemplate>
     </Application.Resources>
 </Application>

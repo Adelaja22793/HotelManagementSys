@@ -1,0 +1,110 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.RestaurantPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Outlet" />
+                <ComboBox Width="200" ItemsSource="{Binding Outlets}" SelectedItem="{Binding Outlet}" DisplayMemberPath="Name" /></StackPanel>
+        </StackPanel>
+        <TabControl>
+            <TabItem Header="Orders">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="2*" /><ColumnDefinition Width="3*" /></Grid.ColumnDefinitions>
+                    <DockPanel Margin="0,0,12,0">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Table (blank for walk-in)" />
+                                <ComboBox Width="120" ItemsSource="{Binding Tables}" SelectedItem="{Binding Table}" DisplayMemberPath="TableNumber" /></StackPanel>
+                            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Covers" />
+                                <TextBox Width="50" Text="{Binding Covers, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            <Button Content="New order" Command="{Binding NewOrderCommand}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionTitle}" Text="Open orders" />
+                        <DataGrid ItemsSource="{Binding OpenOrders}" SelectedItem="{Binding Order}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Order" Binding="{Binding OrderNumber}" />
+                                <DataGridTextColumn Header="Covers" Binding="{Binding Covers}" />
+                                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=N2}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                    <DockPanel Grid.Column="1" Visibility="{Binding Order, Converter={StaticResource NotNullToVis}}">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionTitle}">
+                            <Run Text="Order" /> <Run Text="{Binding Order.OrderNumber, Mode=OneWay}" /> <Run Text="·" /> <Run Text="{Binding Order.Status, Mode=OneWay}" />
+                        </TextBlock>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Dish" />
+                                <ComboBox Width="200" ItemsSource="{Binding Menu}" SelectedItem="{Binding MenuItem}" DisplayMemberPath="Name" /></StackPanel>
+                            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Qty" />
+                                <TextBox Width="50" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Notes" />
+                                <TextBox Width="160" Text="{Binding LineNotes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            <Button Content="Add" Command="{Binding AddItemCommand}" VerticalAlignment="Center" />
+                            <Button Content="Send to kitchen" Command="{Binding SendCommand}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel DockPanel.Dock="Bottom">
+                            <TextBlock Style="{StaticResource SectionTitle}">
+                                <Run Text="Total" /> <Run Text="{Binding Order.Total, Mode=OneWay, StringFormat=N2}" />
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal" Visibility="{Binding CanTakePayment, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Tender" />
+                                    <ComboBox Width="120" ItemsSource="{x:Static vm:RestaurantPageViewModel.Tenders}" SelectedItem="{Binding Tender}" /></StackPanel>
+                                <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Slip / reference" />
+                                    <TextBox Width="140" Text="{Binding PaymentReference, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <Button Content="Settle" Command="{Binding SettleCommand}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Visibility="{Binding CanChargeRoom, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="In-house guest" />
+                                    <ComboBox Width="220" ItemsSource="{Binding InHouse}" SelectedItem="{Binding RoomGuest}">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding RoomNumber, Mode=OneWay}" /> <Run Text="{Binding GuestName, Mode=OneWay}" /></TextBlock></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox></StackPanel>
+                                <Button Content="Charge to room" Command="{Binding ChargeToRoomCommand}" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Void reason" />
+                                    <TextBox Width="220" Text="{Binding VoidReason, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                <Button Content="Void order" Command="{Binding VoidOrderCommand}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding Order.Lines}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Dish" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, StringFormat=N2}" />
+                                <DataGridTextColumn Header="Price" Binding="{Binding UnitPrice, StringFormat=N2}" />
+                                <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=N2}" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Kitchen">
+                <DockPanel Margin="8">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                        <Button Content="Preparing" Command="{Binding AdvanceTicketCommand}" CommandParameter="Preparing" />
+                        <Button Content="Ready" Command="{Binding AdvanceTicketCommand}" CommandParameter="Ready" />
+                        <Button Content="Served" Command="{Binding AdvanceTicketCommand}" CommandParameter="Served" />
+                    </StackPanel>
+                    <DataGrid DockPanel.Dock="Bottom" Height="140" ItemsSource="{Binding Ticket.Lines}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Dish" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, StringFormat=N2}" />
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
+                            <DataGridCheckBoxColumn Header="Voided" Binding="{Binding IsVoided}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <DataGrid ItemsSource="{Binding Tickets}" SelectedItem="{Binding Ticket}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Ticket" Binding="{Binding TicketNumber}" />
+                            <DataGridTextColumn Header="Order" Binding="{Binding OrderNumber}" />
+                            <DataGridTextColumn Header="Station" Binding="{Binding Station}" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                            <DataGridTextColumn Header="Sent (UTC)" Binding="{Binding SentAtUtc, StringFormat=HH:mm}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</UserControl>
