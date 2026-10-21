@@ -17,10 +17,11 @@
                                 <ComboBox Width="120" ItemsSource="{Binding Tables}" SelectedItem="{Binding Table}" DisplayMemberPath="TableNumber" /></StackPanel>
                             <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Covers" />
                                 <TextBox Width="50" Text="{Binding Covers, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                            <Button Content="No table" Command="{Binding ClearTableCommand}" VerticalAlignment="Center" ToolTip="Walk-in or takeaway order" />
                             <Button Content="New order" Command="{Binding NewOrderCommand}" VerticalAlignment="Center" />
                         </StackPanel>
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionTitle}" Text="Open orders" />
-                        <DataGrid ItemsSource="{Binding OpenOrders}" SelectedItem="{Binding Order}">
+                        <DataGrid ItemsSource="{Binding OpenOrders}" SelectedItem="{Binding SelectedOpenOrder}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Order" Binding="{Binding OrderNumber}" />
                                 <DataGridTextColumn Header="Covers" Binding="{Binding Covers}" />
@@ -34,7 +35,9 @@
                         </TextBlock>
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                             <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Dish" />
-                                <ComboBox Width="200" ItemsSource="{Binding Menu}" SelectedItem="{Binding MenuItem}" DisplayMemberPath="Name" /></StackPanel>
+                                <ComboBox Width="240" ItemsSource="{Binding Menu}" SelectedItem="{Binding MenuItem}">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock><Run Text="{Binding Name, Mode=OneWay}" /> <Run Text="{Binding Price, Mode=OneWay, StringFormat=N2}" Foreground="Gray" /></TextBlock></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox></StackPanel>
                             <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Qty" />
                                 <TextBox Width="50" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
                             <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Notes" />
