@@ -78,6 +78,27 @@ public interface IApplicationDbContext
     DbSet<AccountingPeriod> AccountingPeriods { get; }
     DbSet<JournalEntry> JournalEntries { get; }
     DbSet<JournalEntryLine> JournalEntryLines { get; }
+    DbSet<BusinessDayClose> BusinessDayCloses { get; }
+    DbSet<BusinessDayException> BusinessDayExceptions { get; }
+    DbSet<BranchDailyMetric> BranchDailyMetrics { get; }
+    DbSet<BranchDailyDepartmentMetric> BranchDailyDepartmentMetrics { get; }
+    DbSet<AnalyticsRefreshRun> AnalyticsRefreshRuns { get; }
+    DbSet<NotificationTemplate> NotificationTemplates { get; }
+    DbSet<NotificationOutbox> NotificationOutbox { get; }
+    DbSet<NotificationDelivery> NotificationDeliveries { get; }
+    DbSet<NotificationPreference> NotificationPreferences { get; }
+    DbSet<NotificationRead> NotificationReads { get; }
+    DbSet<DocumentRecord> Documents { get; }
+    DbSet<DocumentVersion> DocumentVersions { get; }
+    DbSet<DocumentSignature> DocumentSignatures { get; }
+    DbSet<SecurityIncident> SecurityIncidents { get; }
+    DbSet<IncidentAction> IncidentActions { get; }
+    DbSet<LostFoundItem> LostFoundItems { get; }
+    DbSet<LostFoundCustodyEvent> LostFoundCustodyEvents { get; }
+    DbSet<VisitorLog> VisitorLogs { get; }
+    DbSet<GuestComplaint> GuestComplaints { get; }
+    DbSet<EmergencyEvent> EmergencyEvents { get; }
+    DbSet<EmergencyAction> EmergencyActions { get; }
 
     DatabaseFacade Database { get; }
 

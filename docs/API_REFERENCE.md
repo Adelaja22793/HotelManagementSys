@@ -47,6 +47,8 @@ Lists are paged with `?page=1&pageSize=50` (max 200) and return `{ items, page, 
 | --- | --- | --- |
 | GET | `/system/version` | anonymous; migration state shown to SystemAdmin only |
 | GET | `/health/live`, `/health/ready` | anonymous (no details) |
+| POST | `/system/jobs/run` | `system.manage` — send due notifications and scan uploaded files now |
+| GET | `/analytics/branches?from&to` | `reports.view` — compares every branch the caller can access |
 
 ## Core operations (phase 2)
 
@@ -90,3 +92,32 @@ Phase 3 error codes: `INSUFFICIENT_STOCK`, `OVER_RECEIPT`, `PO_STATE`, `INVOICE_
 `OVERPAYMENT`, `SELF_APPROVAL`, `TABLE_OCCUPIED`, `AMOUNT_MISMATCH`, `NOTHING_TO_SEND`, `WORK_ORDER_STATE`,
 `ROSTER_OVERLAP`, `REST_PERIOD`, `ROSTERED_DURING_LEAVE`, `ALREADY_CLOCKED_IN`, `NO_EMPLOYEE_RECORD`,
 `JOURNAL_UNBALANCED` (400), `CONTROL_ACCOUNT`, `PERIOD_CLOSED`, `PERIOD_NOT_ENDED`, `JOURNAL_ALREADY_REVERSED`.
+
+## Integration (phase 4)
+
+Branch-scoped as before. Audit search and export sit on the branch routes.
+
+| Area | Routes | Permissions |
+| --- | --- | --- |
+| Night audit | `GET business-day`, `GET business-day/closes?from&to`, `POST business-day/close` (body: the date to close), `POST business-day/exceptions/{id}/accept` (reason required) | read `reports.view`; close and accept `businessday.close` |
+| Analytics | `GET analytics/dashboard?from&to`, `POST analytics/refresh`, `GET analytics/forecast?days` | `reports.view` |
+| Notifications | `GET notifications/outbox?status&eventType`, `POST notifications/outbox/{id}/retry`, `/cancel`, `GET/POST notifications/templates`, `GET notifications/inbox?unreadOnly`, `POST notifications/inbox/{id}/read`, `GET/PUT notifications/preferences` | outbox and templates `notifications.manage`; inbox and preferences any branch user |
+| Documents | `GET/POST documents` (multipart: `file`, `title`, `category`, `classification`, `entityType`, `entityId`, `retentionUntil`), `GET documents/{id}`, `POST documents/{id}/versions`, `GET documents/{id}/content?versionId`, `POST documents/{id}/versions/{vid}/decision`, `/rescan`, `/signatures`, `GET documents/{id}/signatures`, `PUT documents/{id}/retention`, `DELETE documents/{id}` | `documents.view`; uploads need `documents.manage` (guest ID also allowed with `guests.manage`); approval `documents.approve`; Confidential needs manage or approve to read, Restricted needs approve |
+| Security log | `GET/POST security/incidents`, `GET security/incidents/{id}`, `POST security/incidents/{id}/actions` (assign, note, resolve, close), `GET/POST security/lost-found`, `POST security/lost-found/{id}/custody` (move, note, return, dispose, donate), `GET/POST security/visitors`, `POST security/visitors/{id}/sign-out`, `POST security/visitors/purge`, `GET/POST security/emergencies`, `POST security/emergencies/{id}/actions`, `/end` | `security.view` to report; `security.manage` to move cases on, release property, purge visitors and end emergencies |
+| Complaints | `GET/POST complaints`, `POST complaints/{id}/actions` (assign, resolve, close) | `guests.view`, `guests.manage` |
+| Audit | `GET /branches/{id}/audit-logs?entityType&entityId&userId&action&fromUtc&toUtc`, `GET /branches/{id}/audit-logs/export` (CSV, max 50,000 rows) | `audit.view` |
+
+How the night audit works: days close in order. `NextDateToClose` is the day after the last closed day
+(or today for a branch that has never closed), and it cannot be closed before it starts. Each run re-checks
+the same record. Blocking findings (`ARRIVAL_PENDING`, `DEPARTURE_PENDING`, `OPEN_RESTAURANT_ORDER`,
+`AR_LEDGER_MISMATCH`) must be fixed or accepted with a reason; warnings (`CASHIER_SHIFT_OPEN`,
+`PAYMENTS_UNVERIFIED`, `REFUNDS_NOT_PAID`, `INVENTORY_LEDGER_MISMATCH`) are recorded only. A successful close
+takes the final daily snapshot, moves the branch to the next business date, and sends the daily report to
+everyone with `reports.view`. Sending the same close again returns the original result.
+
+Phase 4 error codes: `BUSINESS_DATE_MISMATCH`, `BUSINESS_DAY_NOT_STARTED`, `BUSINESS_DAY_BLOCKED`, `BUSINESS_DAY_CLOSED`,
+`EXCEPTION_STATE`, `REASON_REQUIRED` (400), `OUTBOX_STATE`, `DOCUMENT_NOT_RELEASED`, `DOCUMENT_QUARANTINED`,
+`DOCUMENT_NOT_APPROVED`, `DOCUMENT_FILE_MISSING`, `DOCUMENT_DELETED`, `SCAN_PENDING`, `SCAN_STATE`, `SCAN_DONE`,
+`APPROVAL_STATE`, `SELF_APPROVAL`, `LEGAL_HOLD`, `RETENTION_ACTIVE`, `CASE_STATE`, `CASE_CLOSED`, `HOLD_PERIOD`,
+`ITEM_RELEASED`, `VISITOR_LEFT`, `EMERGENCY_ENDED`. Two requests racing on a unique index now return 409
+`CONCURRENCY_CONFLICT` instead of 500.

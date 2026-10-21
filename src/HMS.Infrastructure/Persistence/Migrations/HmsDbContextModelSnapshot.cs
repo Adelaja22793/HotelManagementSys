@@ -25,7 +25,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Account", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -79,7 +78,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.AccountMapping", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("AccountId")
@@ -120,7 +118,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.AccountingPeriod", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ClosedAtUtc")
@@ -174,10 +171,50 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("AccountingPeriods", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.AnalyticsRefreshRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DaysComputed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DaysSkippedFinal")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("ToDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "StartedAtUtc");
+
+                    b.ToTable("AnalyticsRefreshRuns", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.Asset", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -252,7 +289,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.AssignedRoomNight", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -280,7 +316,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.AttendanceRecord", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -341,7 +376,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Action")
@@ -396,7 +430,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Branch", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AddressLine")
@@ -441,6 +474,9 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateOnly?>("LastClosedBusinessDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -470,6 +506,116 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("Branches", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.BranchDailyDepartmentMetric", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ComputedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CostOfSales")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Revenue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "Date", "Department")
+                        .IsUnique();
+
+                    b.ToTable("BranchDailyDepartmentMetrics", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.BranchDailyMetric", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Arrivals")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Cancellations")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Collections")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ComplaintsOpened")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ComplaintsResolved")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ComputedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Departures")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NoShows")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("OtherRevenue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Refunds")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("RoomRevenue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("RoomsAvailable")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoomsSold")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TaxCharged")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("BranchDailyHotelMetrics", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.BranchSequence", b =>
                 {
                     b.Property<Guid>("BranchId")
@@ -487,10 +633,121 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("BranchSequences", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.BusinessDayClose", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClosedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("LastRunAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RunCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StartedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "BusinessDate")
+                        .IsUnique();
+
+                    b.ToTable("BusinessDayCloses", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.BusinessDayException", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AcceptanceReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("AcceptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AcceptedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("CloseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CloseId", "Code", "Reference")
+                        .IsUnique();
+
+                    b.ToTable("BusinessDayExceptions", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.CashierMovement", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -553,7 +810,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.CashierShift", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ApprovedByUserId")
@@ -665,7 +921,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Company", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
@@ -716,7 +971,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Department", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -760,10 +1014,307 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("Departments", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Classification")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid?>("CurrentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("LatestVersionNumber")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("LegalHold")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("RetentionUntil")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "EntityType", "EntityId");
+
+                    b.ToTable("DocumentRecords", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentSignature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("SignatureHash")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("SignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SignerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SignerUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("VersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("VersionId");
+
+                    b.ToTable("DocumentSignatures", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Approval")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApprovalNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ScanDetail")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("ScanLeaseExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ScanLeaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ScanStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ScannedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UploadedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScanStatus");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("DocumentId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("DocumentVersions", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.EmergencyAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EmergencyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmergencyId");
+
+                    b.ToTable("EmergencyActions", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.EmergencyEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("EndedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StartedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.ToTable("EmergencyEvents", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.Employee", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -847,7 +1398,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Folio", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -926,7 +1476,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.FolioCharge", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -1005,7 +1554,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.GoodsReceipt", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1078,7 +1626,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.GoodsReceiptLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("GoodsReceiptId")
@@ -1110,7 +1657,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Guest", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
@@ -1186,10 +1732,100 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("Guests", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.GuestComplaint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ComplaintNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid?>("GuestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OwnerUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ReportedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReportedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("ResolvedBusinessDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("StayId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComplaintNumber")
+                        .IsUnique();
+
+                    b.HasIndex("BranchId", "BusinessDate");
+
+                    b.ToTable("GuestComplaints", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.HotelUserBranch", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1238,7 +1874,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.HousekeepingTask", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AssignedToUserId")
@@ -1324,10 +1959,41 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("HousekeepingTasks", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.IncidentAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("IncidentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId");
+
+                    b.ToTable("IncidentActions", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.InventoryItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1396,7 +2062,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Balance")
@@ -1468,7 +2133,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.JournalEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1534,7 +2198,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.JournalEntryLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("AccountId")
@@ -1573,7 +2236,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.KitchenTicket", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1640,7 +2302,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.KitchenTicketLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsVoided")
@@ -1677,7 +2338,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.LeaveRecord", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1739,10 +2399,126 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("LeaveRecords", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.LostFoundCustodyEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Counterparty")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.ToTable("LostFoundCustodyEvents", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.LostFoundItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("FoundAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FoundByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("FoundLocation")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("GuestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsValuable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageLocation")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemNumber")
+                        .IsUnique();
+
+                    b.HasIndex("BranchId", "Status");
+
+                    b.ToTable("LostFoundItems", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.MaintenanceRequest", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("AssetId")
@@ -1819,7 +2595,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.MenuCategory", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1863,7 +2638,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.MenuItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -1934,7 +2708,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.MenuItemIngredient", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ItemId")
@@ -1957,10 +2730,270 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("MenuItemIngredients", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempt")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeliveredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("OutboxId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OutboxId", "Attempt");
+
+                    b.ToTable("NotificationDeliveries", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationOutbox", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("LeaseExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("LeaseId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<DateTime?>("SentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "NextAttemptAtUtc");
+
+                    b.HasIndex("BranchId", "Channel", "Recipient", "CreatedAtUtc");
+
+                    b.ToTable("NotificationOutbox", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("GuestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "UserId", "GuestId", "EventType", "Channel")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL AND [GuestId] IS NOT NULL");
+
+                    b.ToTable("NotificationPreferences", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationRead", b =>
+                {
+                    b.Property<Guid>("OutboxId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ReadAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("OutboxId", "UserId");
+
+                    b.ToTable("NotificationReads", (string)null);
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "BranchId", "EventType", "Channel", "Language", "Version")
+                        .IsUnique()
+                        .HasFilter("[BranchId] IS NOT NULL");
+
+                    b.ToTable("NotificationTemplates", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.OvertimeRequest", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2024,7 +3057,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Payment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -2116,7 +3148,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.PreventiveMaintenanceOccurrence", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2163,7 +3194,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.PreventiveMaintenancePlan", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("AssetId")
@@ -2227,7 +3257,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ApprovedAtUtc")
@@ -2303,7 +3332,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.PurchaseOrderLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("InvoicedQuantity")
@@ -2343,7 +3371,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.PurchaseRequisition", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2412,7 +3439,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.PurchaseRequisitionLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("EstimatedUnitCost")
@@ -2441,7 +3467,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RatePlan", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2504,7 +3529,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Receipt", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2557,7 +3581,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Refund", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -2660,7 +3683,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Reservation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Adults")
@@ -2806,7 +3828,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.ReservationNight", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly>("Date")
@@ -2838,7 +3859,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RestaurantOrder", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -2930,7 +3950,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RestaurantOrderLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -2994,7 +4013,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RestaurantOutlet", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3053,7 +4071,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RestaurantTable", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3101,7 +4118,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Room", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3161,7 +4177,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RoomBlock", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3216,7 +4231,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RoomNightInventory", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("BlockedCount")
@@ -3266,7 +4280,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RoomRate", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3319,7 +4332,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RoomType", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("BaseRate")
@@ -3384,7 +4396,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RosterEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3432,10 +4443,104 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("RosterEntries", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.SecurityIncident", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid?>("GuestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IncidentNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OwnerUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("ReportedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReportedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentNumber")
+                        .IsUnique();
+
+                    b.HasIndex("BranchId", "Status");
+
+                    b.ToTable("SecurityIncidents", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.ServiceItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3493,7 +4598,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.ShiftHandover", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("AcknowledgedAtUtc")
@@ -3555,7 +4659,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Stay", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BalanceOverrideReason")
@@ -3638,7 +4741,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.StockBalance", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AverageCost")
@@ -3686,7 +4788,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.StockLocation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3737,7 +4838,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.StockMovement", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -3809,7 +4909,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.Supplier", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
@@ -3879,7 +4978,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.SupplierInvoice", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AmountPaid")
@@ -3977,7 +5075,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.SupplierInvoiceLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -4013,7 +5110,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.SupplierPayment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
@@ -4088,7 +5184,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.TaxRule", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -4152,10 +5247,76 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.ToTable("TaxRules", (string)null);
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.VisitorLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ArrivedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid?>("HostGuestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdTypeChecked")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("LeftAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("RecordedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("VisitorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId", "ArrivedAtUtc");
+
+                    b.ToTable("VisitorLogs", (string)null);
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.WorkOrder", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("AssetId")
@@ -4273,7 +5434,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.WorkOrderPartUsage", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -4337,7 +5497,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.WorkShift", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BranchId")
@@ -4485,7 +5644,6 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Infrastructure.Identity.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -4701,6 +5859,15 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.AnalyticsRefreshRun", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.Asset", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Branch", null)
@@ -4752,11 +5919,47 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.BranchDailyDepartmentMetric", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.BranchDailyMetric", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.BranchSequence", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Branch", null)
                         .WithMany()
                         .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.BusinessDayClose", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.BusinessDayException", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.BusinessDayClose", null)
+                        .WithMany("Exceptions")
+                        .HasForeignKey("CloseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -4771,6 +5974,51 @@ namespace HMS.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("HMS.Domain.Entities.Department", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentRecord", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentSignature", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.DocumentVersion", null)
+                        .WithMany()
+                        .HasForeignKey("VersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentVersion", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.DocumentRecord", null)
+                        .WithMany("Versions")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.EmergencyAction", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.EmergencyEvent", null)
+                        .WithMany("Actions")
+                        .HasForeignKey("EmergencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.EmergencyEvent", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Branch", null)
                         .WithMany()
@@ -4845,6 +6093,15 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.GuestComplaint", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.HotelUserBranch", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Branch", "Branch")
@@ -4877,6 +6134,15 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.IncidentAction", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.SecurityIncident", null)
+                        .WithMany("Actions")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HMS.Domain.Entities.InventoryItem", b =>
@@ -4964,6 +6230,24 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.LostFoundCustodyEvent", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.LostFoundItem", null)
+                        .WithMany("Events")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.LostFoundItem", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.MaintenanceRequest", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Asset", null)
@@ -5015,6 +6299,33 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationDelivery", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.NotificationOutbox", null)
+                        .WithMany()
+                        .HasForeignKey("OutboxId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationOutbox", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.NotificationRead", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.NotificationOutbox", null)
+                        .WithMany()
+                        .HasForeignKey("OutboxId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HMS.Domain.Entities.OvertimeRequest", b =>
@@ -5333,6 +6644,15 @@ namespace HMS.Infrastructure.Persistence.Migrations
                     b.Navigation("Shift");
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.SecurityIncident", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.ShiftHandover", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Department", null)
@@ -5464,6 +6784,15 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.VisitorLog", b =>
+                {
+                    b.HasOne("HMS.Domain.Entities.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.WorkOrder", b =>
                 {
                     b.HasOne("HMS.Domain.Entities.Asset", null)
@@ -5582,9 +6911,24 @@ namespace HMS.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HMS.Domain.Entities.BusinessDayClose", b =>
+                {
+                    b.Navigation("Exceptions");
+                });
+
             modelBuilder.Entity("HMS.Domain.Entities.Company", b =>
                 {
                     b.Navigation("Branches");
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.DocumentRecord", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.EmergencyEvent", b =>
+                {
+                    b.Navigation("Actions");
                 });
 
             modelBuilder.Entity("HMS.Domain.Entities.GoodsReceipt", b =>
@@ -5600,6 +6944,11 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.KitchenTicket", b =>
                 {
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.LostFoundItem", b =>
+                {
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("HMS.Domain.Entities.MenuItem", b =>
@@ -5625,6 +6974,11 @@ namespace HMS.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HMS.Domain.Entities.RestaurantOrder", b =>
                 {
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("HMS.Domain.Entities.SecurityIncident", b =>
+                {
+                    b.Navigation("Actions");
                 });
 
             modelBuilder.Entity("HMS.Domain.Entities.SupplierInvoice", b =>

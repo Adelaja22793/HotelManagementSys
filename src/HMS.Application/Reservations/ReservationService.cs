@@ -41,7 +41,8 @@ internal sealed class ReservationService(
     IRoomInventoryService inventory,
     IGuestService guests,
     IFolioService folios,
-    INumberSequence numbers) : IReservationService
+    INumberSequence numbers,
+    Notifications.INotificationQueue notifications) : IReservationService
 {
     public async Task<IReadOnlyList<RoomTypeAvailabilityDto>> GetAvailabilityAsync(Guid branchId, AvailabilityQuery query, CancellationToken ct = default)
     {
@@ -103,6 +104,18 @@ internal sealed class ReservationService(
         if (overbooked) reservation.MarkOverbooked();
         db.Reservations.Add(reservation);
         await folios.CreateForReservationAsync(scope, reservation, ct);
+        await notifications.EnqueueForGuestAsync(scope, NotificationEvents.ReservationConfirmed, "Reservation", reservation.Id.ToString(), guest,
+            new Dictionary<string, string>
+            {
+                ["GuestName"] = $"{guest.FirstName} {guest.LastName}".Trim(),
+                ["ReservationNumber"] = reservation.ReservationNumber,
+                ["ArrivalDate"] = reservation.ArrivalDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
+                ["DepartureDate"] = reservation.DepartureDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
+                ["Nights"] = (reservation.DepartureDate.DayNumber - reservation.ArrivalDate.DayNumber).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ["Currency"] = reservation.Currency,
+                ["Total"] = reservation.TotalAmount.ToString("N2", System.Globalization.CultureInfo.InvariantCulture),
+                ["CancellationPolicy"] = reservation.CancellationPolicy,
+            }, ct);
 
         try
         {

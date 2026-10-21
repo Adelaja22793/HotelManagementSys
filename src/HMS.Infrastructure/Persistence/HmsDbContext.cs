@@ -83,6 +83,27 @@ public class HmsDbContext(DbContextOptions<HmsDbContext> options)
     public DbSet<AccountingPeriod> AccountingPeriods => Set<AccountingPeriod>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
     public DbSet<JournalEntryLine> JournalEntryLines => Set<JournalEntryLine>();
+    public DbSet<BusinessDayClose> BusinessDayCloses => Set<BusinessDayClose>();
+    public DbSet<BusinessDayException> BusinessDayExceptions => Set<BusinessDayException>();
+    public DbSet<BranchDailyMetric> BranchDailyMetrics => Set<BranchDailyMetric>();
+    public DbSet<BranchDailyDepartmentMetric> BranchDailyDepartmentMetrics => Set<BranchDailyDepartmentMetric>();
+    public DbSet<AnalyticsRefreshRun> AnalyticsRefreshRuns => Set<AnalyticsRefreshRun>();
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+    public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
+    public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<NotificationRead> NotificationReads => Set<NotificationRead>();
+    public DbSet<DocumentRecord> Documents => Set<DocumentRecord>();
+    public DbSet<DocumentVersion> DocumentVersions => Set<DocumentVersion>();
+    public DbSet<DocumentSignature> DocumentSignatures => Set<DocumentSignature>();
+    public DbSet<SecurityIncident> SecurityIncidents => Set<SecurityIncident>();
+    public DbSet<IncidentAction> IncidentActions => Set<IncidentAction>();
+    public DbSet<LostFoundItem> LostFoundItems => Set<LostFoundItem>();
+    public DbSet<LostFoundCustodyEvent> LostFoundCustodyEvents => Set<LostFoundCustodyEvent>();
+    public DbSet<VisitorLog> VisitorLogs => Set<VisitorLog>();
+    public DbSet<GuestComplaint> GuestComplaints => Set<GuestComplaint>();
+    public DbSet<EmergencyEvent> EmergencyEvents => Set<EmergencyEvent>();
+    public DbSet<EmergencyAction> EmergencyActions => Set<EmergencyAction>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -98,6 +119,13 @@ public class HmsDbContext(DbContextOptions<HmsDbContext> options)
                 if (!fk.DeclaringEntityType.ClrType.Namespace!.StartsWith("Microsoft.AspNetCore.Identity", StringComparison.Ordinal))
                     fk.DeleteBehavior = DeleteBehavior.Restrict;
             }
+
+            // Ids are created in code (Guid.NewGuid), so a child added to a loaded parent's collection must be
+            // inserted, not treated as an existing row to update.
+            var key = entity.FindPrimaryKey();
+            if (key is { Properties.Count: 1 } && key.Properties[0].ClrType == typeof(Guid) && key.Properties[0].Name == "Id"
+                && !entity.ClrType.Namespace!.StartsWith("Microsoft.AspNetCore.Identity", StringComparison.Ordinal))
+                key.Properties[0].ValueGenerated = Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.Never;
 
             if (typeof(IConcurrencyTracked).IsAssignableFrom(entity.ClrType))
                 builder.Entity(entity.ClrType).Property(nameof(IConcurrencyTracked.ConcurrencyStamp)).IsConcurrencyToken();

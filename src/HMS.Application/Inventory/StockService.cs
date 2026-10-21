@@ -20,7 +20,7 @@ public interface IStockService
         string sourceType, string sourceId, string? reference, CancellationToken ct);
 }
 
-internal sealed class StockService(IApplicationDbContext db) : IStockService
+internal sealed class StockService(IApplicationDbContext db, Notifications.INotificationQueue notifications) : IStockService
 {
     public async Task<StockMovement> AddAsync(BranchScope scope, Guid itemId, Guid locationId, decimal quantity, decimal unitCost,
         StockMovementType type, string sourceType, string sourceId, string? reference, CancellationToken ct)
@@ -38,8 +38,25 @@ internal sealed class StockService(IApplicationDbContext db) : IStockService
         db.RequireTransaction();
         if (await FindAsync(scope, itemId, locationId, type, sourceType, sourceId, ct) is { } existing) return existing;
         var balance = await BalanceAsync(scope, itemId, locationId, ct);
+        var before = balance.Quantity;
         var cost = balance.Remove(quantity);
+        await AlertIfLowAsync(scope, balance, before, ct);
         return Append(scope, balance, type, -quantity, cost, sourceType, sourceId, reference);
+    }
+
+    /// <summary>Tells stock controllers (once per item, location and day) when a removal takes stock to or below its reorder level.</summary>
+    private async Task AlertIfLowAsync(BranchScope scope, StockBalance balance, decimal before, CancellationToken ct)
+    {
+        var item = await db.InventoryItems.AsNoTracking().SingleAsync(i => i.Id == balance.ItemId, ct);
+        if (item.ReorderLevel <= 0 || balance.Quantity > item.ReorderLevel || before <= item.ReorderLevel) return;
+        var location = await db.StockLocations.AsNoTracking().SingleAsync(l => l.Id == balance.LocationId, ct);
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        await notifications.EnqueueInAppAsync(scope, NotificationEvents.LowStockDetected, "StockBalance", $"{balance.ItemId:N}:{balance.LocationId:N}",
+            "perm:" + Security.Permissions.InventoryManage, new Dictionary<string, string>
+            {
+                ["ItemName"] = item.Name, ["Sku"] = item.Sku, ["Location"] = location.Name, ["Unit"] = item.Unit,
+                ["Quantity"] = balance.Quantity.ToString("0.###", inv), ["ReorderLevel"] = item.ReorderLevel.ToString("0.###", inv),
+            }, ct, discriminator: scope.BusinessDate.ToString("yyyyMMdd", inv));
     }
 
     private StockMovement Append(BranchScope scope, StockBalance balance, StockMovementType type, decimal signedQuantity, decimal unitCost,

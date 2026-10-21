@@ -28,6 +28,22 @@
 | Ledger and stock movements are append-only; corrections are reversing entries | `AuditingInterceptor` |
 | Manual journals cannot touch control accounts (AR, AP, inventory, GRNI) and closed periods refuse postings | `AccountingService`, `LedgerService` |
 
+## Added in phase 4
+
+| Control | Where |
+| --- | --- |
+| Uploaded files are checked by extension, declared type and signature bytes (pdf, png, jpg, docx, xlsx only), limited to 10 MB, renamed to random keys and stored outside the web root | `FileRules`, `FileSystemDocumentStorage` |
+| Files stay in quarantine until a malware scan (ClamAV) passes; a scanner outage keeps them quarantined, never released | `DocumentScanProcessor`, `ClamAvScanner` |
+| Contracts, supplier invoices and policies need approval by someone other than the uploader | `DocumentVersion.Decide` |
+| Classification limits who can see a document (Confidential: manage or approve; Restricted: approve); hidden documents look like they do not exist | `DocumentService` |
+| Every document download and every audit export is written to the audit trail | `DocumentService`, `AuditQueryService` |
+| Downloads are sent with `nosniff` and `no-store` | `DocumentsController` |
+| Signatures are an HMAC over the signer, purpose, time and the file's SHA-256; a changed row or file no longer verifies | `HmacDocumentSigner` |
+| Legal hold and retention dates stop deletion | `DocumentRecord.Delete` |
+| Audit CSV export neutralises spreadsheet formulas (CSV injection) | `AuditQueryService.Cell` |
+| Releasing found property needs `security.manage`; returns record who received it and the ID checked | `SecurityService`, `LostFoundItem` |
+| Notification bodies and recipients are never logged; failed sends keep only a short provider error | `NotificationDispatcher` |
+
 ## Rules for every new module
 
 - Put branch-scoped endpoints under `/api/v1/branches/{branchId}/...` so the global filter applies.

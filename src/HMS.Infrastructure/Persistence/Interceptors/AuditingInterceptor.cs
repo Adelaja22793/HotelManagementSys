@@ -40,7 +40,8 @@ public sealed class AuditingInterceptor(ICurrentUser currentUser, IClock clock) 
             if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)) continue;
 
             // Ledger lines and stock history are append-only; corrections are new reversing records.
-            if (entry.State != EntityState.Added && entry.Entity is StockMovement or JournalEntryLine)
+            if (entry.State != EntityState.Added && entry.Entity is StockMovement or JournalEntryLine or AuditLog or IncidentAction
+                    or LostFoundCustodyEvent or EmergencyAction or DocumentSignature or NotificationDelivery)
                 throw new InvalidOperationException($"{entry.Metadata.ClrType.Name} records are immutable.");
             if (entry.State == EntityState.Deleted && entry.Entity is JournalEntry)
                 throw new InvalidOperationException("Journal entries are immutable.");

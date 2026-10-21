@@ -1,4 +1,9 @@
 using HMS.Application.Abstractions;
+using HMS.Application.Documents;
+using HMS.Application.Notifications;
+using HMS.Application.SecurityOps;
+using HMS.Infrastructure.Documents;
+using HMS.Infrastructure.Notifications;
 using HMS.Infrastructure.Identity;
 using HMS.Infrastructure.Persistence;
 using HMS.Infrastructure.Persistence.Interceptors;
@@ -51,6 +56,25 @@ public static class DependencyInjection
 
         services.AddSingleton<TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+
+        // Documents: private storage, malware scanning and signature keys
+        services.Configure<DocumentOptions>(configuration.GetSection(DocumentOptions.SectionName));
+        services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
+        services.AddSingleton<IDocumentStorage, FileSystemDocumentStorage>();
+        services.AddSingleton<IDocumentSigner, HmacDocumentSigner>();
+        services.AddSingleton<ClamAvScanner>();
+        services.AddSingleton<NoMalwareScanner>();
+        services.AddSingleton<IMalwareScanner, ConfiguredMalwareScanner>();
+
+        // Notification providers. Channels without a provider fail visibly in the outbox instead of silently.
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.Configure<SmsOptions>(configuration.GetSection(SmsOptions.SectionName));
+        // Providers are chosen from configuration at send time (Email:Mode, Sms:Provider).
+        services.AddSingleton<SmtpEmailSender>();
+        services.AddSingleton<PickupEmailSender>();
+        services.AddHttpClient<TermiiSmsSender>(c => c.Timeout = TimeSpan.FromSeconds(20));
+        services.AddSingleton<INotificationSender, ConfiguredEmailSender>();
+        services.AddScoped<INotificationSender, ConfiguredSmsSender>();
         return services;
     }
 }

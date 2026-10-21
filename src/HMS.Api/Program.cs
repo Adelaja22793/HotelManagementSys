@@ -115,6 +115,10 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<HmsDbContext>("database", tags: ["ready"]);
 
+builder.Services.Configure<BackgroundJobsOptions>(builder.Configuration.GetSection(BackgroundJobsOptions.SectionName));
+builder.Services.AddSingleton<BackgroundJobRunner>();
+builder.Services.AddHostedService<BackgroundJobsWorker>();
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

@@ -2,7 +2,12 @@ using HMS.Application.Abstractions;
 using HMS.Application.Accounting;
 using HMS.Application.Auditing;
 using HMS.Application.Branches;
+using HMS.Application.Analytics;
 using HMS.Application.Billing;
+using HMS.Application.BusinessDay;
+using HMS.Application.Documents;
+using HMS.Application.Notifications;
+using HMS.Application.SecurityOps;
 using HMS.Application.Cashier;
 using HMS.Application.Common;
 using HMS.Application.FrontDesk;
@@ -54,6 +59,19 @@ public static class DependencyInjection
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IMaintenanceService, MaintenanceService>();
         services.AddScoped<IStaffService, StaffService>();
+
+        // Phase 4: integration
+        services.AddScoped<INotificationQueue, NotificationQueue>();
+        services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddSingleton<INotificationSender, InAppSender>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IBusinessDayService, BusinessDayService>();
+        services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped<IDocumentScanProcessor, DocumentScanProcessor>();
+        services.AddScoped<ISecurityService, SecurityService>();
+        services.AddOptions<SecurityOptions>();
+        services.AddOptions<DocumentOptions>();
         return services;
     }
 }

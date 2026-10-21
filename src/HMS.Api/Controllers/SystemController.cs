@@ -1,3 +1,5 @@
+using HMS.Api.Authorization;
+using HMS.Api.Services;
 using HMS.Application.Security;
 using HMS.Contracts.Operations;
 using HMS.Infrastructure.Persistence;
@@ -36,4 +38,9 @@ public sealed class SystemController(HmsDbContext db, IConfiguration configurati
             pending,
             time.GetUtcNow().UtcDateTime);
     }
+
+    /// <summary>Runs the notification and document-scan jobs now instead of waiting for the next timer tick.</summary>
+    [HttpPost("jobs/run")]
+    [HasPermission(Permissions.SystemManage)]
+    public Task<JobRunResult> RunJobs([FromServices] BackgroundJobRunner runner, CancellationToken ct) => runner.RunOnceAsync(ct);
 }

@@ -24,7 +24,7 @@ internal sealed class NumberSequence(IApplicationDbContext db) : INumberSequence
             SequenceNames.Reservation, SequenceNames.Folio, SequenceNames.Receipt, SequenceNames.Invoice, SequenceNames.Refund,
             SequenceNames.Journal, SequenceNames.Requisition, SequenceNames.PurchaseOrder, SequenceNames.GoodsReceipt,
             SequenceNames.SupplierInvoice, SequenceNames.SupplierPayment, SequenceNames.RestaurantOrder, SequenceNames.KitchenTicket,
-            SequenceNames.WorkOrder, SequenceNames.StockDocument,
+            SequenceNames.WorkOrder, SequenceNames.StockDocument, SequenceNames.Incident, SequenceNames.LostFound, SequenceNames.Complaint,
         ];
 
     public async Task<string> NextAsync(Branch branch, string sequenceName, CancellationToken ct)

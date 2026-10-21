@@ -37,6 +37,10 @@ public class Branch : AuditableEntity, IConcurrencyTracked
     public bool HousekeepingRequiresInspection { get; private set; } = true;
 
     public bool IsActive { get; private set; } = true;
+
+    /// <summary>The last business date closed by the night audit. The branch never operates on or before it again.</summary>
+    public DateOnly? LastClosedBusinessDate { get; private set; }
+
     public Guid ConcurrencyStamp { get; set; } = Guid.NewGuid();
 
     public void Update(string name, string timeZoneId, string currency, string? addressLine, string? city, string? phone)
@@ -60,12 +64,36 @@ public class Branch : AuditableEntity, IConcurrencyTracked
     public DateTime ToLocal(DateTime utc) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), GetTimeZone());
 
-    /// <summary>The hotel operating date for a UTC instant, honouring the branch cutoff.</summary>
+    /// <summary>
+    /// The hotel operating date for a UTC instant, honouring the branch cutoff. Once a day is closed the branch
+    /// moves to the next date straight away, even if the clock has not reached it yet (night audit before midnight).
+    /// </summary>
     public DateOnly GetBusinessDate(DateTime utc)
+    {
+        var clockDate = GetClockDate(utc);
+        return LastClosedBusinessDate is { } closed && clockDate <= closed ? closed.AddDays(1) : clockDate;
+    }
+
+    /// <summary>The operating date the wall clock alone gives, ignoring any night audit already done.</summary>
+    public DateOnly GetClockDate(DateTime utc)
     {
         var local = ToLocal(utc);
         var date = DateOnly.FromDateTime(local);
         return TimeOnly.FromDateTime(local) < BusinessDayCutoffLocal ? date.AddDays(-1) : date;
+    }
+
+    /// <summary>The next day the night audit must close: the day after the last close, or today for a branch never closed.</summary>
+    public DateOnly GetNextDateToClose(DateTime utcNow) => LastClosedBusinessDate?.AddDays(1) ?? GetBusinessDate(utcNow);
+
+    /// <summary>Records the night audit. Days close one at a time, in order, and never ahead of the clock.</summary>
+    public void CloseBusinessDay(DateOnly businessDate, DateTime utcNow)
+    {
+        var expected = GetNextDateToClose(utcNow);
+        if (businessDate != expected)
+            throw new DomainConflictException("BUSINESS_DATE_MISMATCH", $"The next day to close is {expected:yyyy-MM-dd}.");
+        if (businessDate > GetClockDate(utcNow))
+            throw new DomainConflictException("BUSINESS_DAY_NOT_STARTED", $"{businessDate:yyyy-MM-dd} has not started yet.");
+        LastClosedBusinessDate = businessDate;
     }
 
     private static string ValidateTimeZone(string timeZoneId)

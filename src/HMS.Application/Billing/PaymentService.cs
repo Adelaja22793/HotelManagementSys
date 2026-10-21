@@ -36,7 +36,8 @@ internal sealed class PaymentService(
     IClock clock,
     INumberSequence numbers,
     ICashierService cashier,
-    ILedgerService ledger) : IPaymentService
+    ILedgerService ledger,
+    Notifications.INotificationQueue notifications) : IPaymentService
 {
     public async Task<PaymentDto> RecordAsync(Guid branchId, Guid folioId, RecordPaymentRequest request, string? idempotencyKey, CancellationToken ct = default)
     {
@@ -178,6 +179,7 @@ internal sealed class PaymentService(
         BranchOperations.EnsureStamp(refund, request.ConcurrencyStamp, "refund");
         if (request.Approved) refund.Approve(scope.UserId, scope.UtcNow);
         else refund.Reject(scope.UserId, request.RejectionReason ?? string.Empty, scope.UtcNow);
+        await NotifyRefundAsync(scope, refund, ct);
         await db.SaveChangesAsync(ct);
         return ToDto(refund);
     }
@@ -205,6 +207,7 @@ internal sealed class PaymentService(
 
         refund.Execute(scope.UserId, scope.UtcNow, request.ExternalReference, shiftId);
         await ledger.PostRefundAsync(scope, folio, refund, ct);
+        await NotifyRefundAsync(scope, refund, ct);
         db.Touch(folio);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
@@ -241,6 +244,30 @@ internal sealed class PaymentService(
         });
         db.Receipts.Add(new Receipt(scope.CompanyId, scope.BranchId, payment.Id, number, scope.UtcNow, snapshot));
         await ledger.PostPaymentAsync(scope, folio, payment, ct); // only confirmed money reaches the ledger
+
+        if (await GuestOfAsync(folio, ct) is { } guest)
+            await notifications.EnqueueForGuestAsync(scope, NotificationEvents.PaymentConfirmed, "Payment", payment.Id.ToString(), guest,
+                new Dictionary<string, string>
+                {
+                    ["GuestName"] = guest.FullName, ["ReceiptNumber"] = number, ["Currency"] = payment.Currency,
+                    ["Amount"] = payment.Amount.ToString("N2", System.Globalization.CultureInfo.InvariantCulture), ["Tender"] = payment.Tender.ToString(),
+                }, ct);
+    }
+
+    private async Task<Guest?> GuestOfAsync(Folio folio, CancellationToken ct) =>
+        folio.Guest ?? (folio.GuestId is { } id ? await db.Guests.SingleOrDefaultAsync(g => g.Id == id, ct) : null);
+
+    private async Task NotifyRefundAsync(BranchScope scope, Refund refund, CancellationToken ct)
+    {
+        var folio = await db.Folios.Include(f => f.Guest).SingleAsync(f => f.Id == refund.FolioId, ct);
+        if (await GuestOfAsync(folio, ct) is not { } guest) return;
+        await notifications.EnqueueForGuestAsync(scope, NotificationEvents.RefundStatusChanged, "Refund", refund.Id.ToString(), guest,
+            new Dictionary<string, string>
+            {
+                ["GuestName"] = guest.FullName, ["RefundNumber"] = refund.RefundNumber, ["Currency"] = folio.Currency,
+                ["Amount"] = refund.Amount.ToString("N2", System.Globalization.CultureInfo.InvariantCulture),
+                ["Status"] = refund.Status switch { RefundStatus.Executed => "paid", RefundStatus.Approved => "approved", RefundStatus.Rejected => "declined", _ => "requested" },
+            }, ct, discriminator: refund.Status.ToString());
     }
 
     private async Task<PaymentDto> ReplayAsync(Payment existing, Guid folioId, decimal amount, TenderType tender, CancellationToken ct)

@@ -21,7 +21,8 @@ public interface ICashierService
     Task<CashierShift?> FindOpenShiftAsync(BranchScope scope, CancellationToken ct);
 }
 
-internal sealed class CashierService(IApplicationDbContext db, IBranchAccessService access, ICurrentUser user, IClock clock) : ICashierService
+internal sealed class CashierService(IApplicationDbContext db, IBranchAccessService access, ICurrentUser user, IClock clock,
+    Notifications.INotificationQueue notifications) : ICashierService
 {
     public async Task<CashierShiftDto> OpenAsync(Guid branchId, OpenShiftRequest request, CancellationToken ct = default)
     {
@@ -91,6 +92,17 @@ internal sealed class CashierService(IApplicationDbContext db, IBranchAccessServ
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var (cash, pos, transfer) = await TotalsAsync(shift.Id, ct);
         shift.SubmitCount(scope.UtcNow, cash, pos, transfer, request.CountedCash, request.VerifiedPos, request.VerifiedTransfer, request.VarianceExplanation);
+        if (shift.Status == CashierShiftStatus.Closing)
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            var parts = new[] { ("cash", shift.CashVariance), ("POS", shift.PosVariance), ("transfer", shift.TransferVariance) }
+                .Where(v => v.Item2 is { } x && x != 0).Select(v => $"{v.Item1} {v.Item2!.Value.ToString("+#,0.00;-#,0.00", inv)}");
+            await notifications.EnqueueInAppAsync(scope, NotificationEvents.ShiftVarianceDetected, "CashierShift", shift.Id.ToString(),
+                "perm:" + Security.Permissions.CashierApproveVariance, new Dictionary<string, string>
+                {
+                    ["BusinessDate"] = shift.BusinessDate.ToString("yyyy-MM-dd", inv), ["Variances"] = string.Join(", ", parts),
+                }, ct);
+        }
         // The stamp check on save makes a concurrent payment (which touches the shift) and this close mutually exclusive.
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);

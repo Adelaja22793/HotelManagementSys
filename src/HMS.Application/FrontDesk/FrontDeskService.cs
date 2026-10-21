@@ -30,7 +30,8 @@ internal sealed class FrontDeskService(
     IClock clock,
     IReservationService reservations,
     IRoomInventoryService inventory,
-    IFolioService folios) : IFrontDeskService
+    IFolioService folios,
+    Notifications.INotificationQueue notifications) : IFrontDeskService
 {
     public async Task<FrontDeskSummaryDto> GetSummaryAsync(Guid branchId, CancellationToken ct = default)
     {
@@ -175,6 +176,8 @@ internal sealed class FrontDeskService(
         // A zero balance closes the folio; any debit or credit stays open for collection or refund.
         if (balance == 0) folio.Close(scope.UtcNow);
         var invoice = await folios.CreateInvoiceAsync(scope, folio, ct);
+        await notifications.EnqueueForGuestAsync(scope, NotificationEvents.GuestCheckedOut, "Stay", stay.Id.ToString(), reservation.Guest!,
+            new Dictionary<string, string> { ["GuestName"] = reservation.Guest!.FullName, ["InvoiceNumber"] = invoice.InvoiceNumber }, ct);
 
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);

@@ -40,7 +40,8 @@ internal sealed class MaintenanceService(
     INumberSequence numbers,
     IStockService stock,
     ILedgerService ledger,
-    IRoomService rooms) : IMaintenanceService
+    IRoomService rooms,
+    Notifications.INotificationQueue notifications) : IMaintenanceService
 {
     public async Task<IReadOnlyList<AssetDto>> ListAssetsAsync(Guid branchId, CancellationToken ct = default)
     {
@@ -153,7 +154,12 @@ internal sealed class MaintenanceService(
     }
 
     public Task<WorkOrderDto> AssignAsync(Guid branchId, Guid workOrderId, AssignWorkOrderRequest request, CancellationToken ct = default) =>
-        MutateAsync(branchId, workOrderId, request.ConcurrencyStamp, (wo, _) => { wo.Assign(request.UserId); return Task.CompletedTask; }, ct);
+        MutateAsync(branchId, workOrderId, request.ConcurrencyStamp, async (wo, scope) =>
+        {
+            await EnsureMemberAsync(scope, request.UserId, ct);
+            wo.Assign(request.UserId);
+            await NotifyAssignedAsync(scope, wo, ct);
+        }, ct);
 
     public Task<WorkOrderDto> StartAsync(Guid branchId, Guid workOrderId, WorkOrderActionRequest request, CancellationToken ct = default) =>
         MutateAsync(branchId, workOrderId, request.ConcurrencyStamp, async (wo, scope) =>
@@ -310,7 +316,12 @@ internal sealed class MaintenanceService(
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var number = await numbers.NextAsync(scope.Branch, SequenceNames.WorkOrder, ct);
         var wo = new WorkOrder(scope.CompanyId, scope.BranchId, number, title, description, priority, roomId, assetId, requestId, planId, dueDate);
-        if (!string.IsNullOrWhiteSpace(assignTo)) wo.Assign(assignTo);
+        if (!string.IsNullOrWhiteSpace(assignTo))
+        {
+            await EnsureMemberAsync(scope, assignTo, ct);
+            wo.Assign(assignTo);
+            await NotifyAssignedAsync(scope, wo, ct);
+        }
         db.WorkOrders.Add(wo);
         onCreated?.Invoke(wo);
         if (room is not null)
@@ -351,6 +362,23 @@ internal sealed class MaintenanceService(
         await SaveOrConflictAsync(ct);
         if (tx is not null) await tx.CommitAsync(ct);
         return await GetWorkOrderAsync(branchId, workOrderId, ct);
+    }
+
+    private async Task EnsureMemberAsync(BranchScope scope, string userId, CancellationToken ct)
+    {
+        if (!await db.UserBranches.AnyAsync(m => m.UserId == userId && m.BranchId == scope.BranchId && m.IsActive, ct))
+            throw new ValidationAppException("UserId", "The technician must be a staff member of this branch.");
+    }
+
+    private async Task NotifyAssignedAsync(BranchScope scope, WorkOrder wo, CancellationToken ct)
+    {
+        var roomNumber = wo.RoomId is { } roomId ? await db.Rooms.Where(r => r.Id == roomId).Select(r => r.RoomNumber).SingleOrDefaultAsync(ct) : null;
+        await notifications.EnqueueInAppAsync(scope, NotificationEvents.MaintenanceAssigned, "WorkOrder", wo.Id.ToString(), "user:" + wo.AssignedToUserId,
+            new Dictionary<string, string>
+            {
+                ["WorkOrderNumber"] = wo.WorkOrderNumber, ["Title"] = wo.Title, ["Priority"] = wo.Priority.ToString(),
+                ["RoomText"] = roomNumber is null ? "" : $" in room {roomNumber}",
+            }, ct, discriminator: wo.AssignedToUserId!);
     }
 
     private async Task SaveOrConflictAsync(CancellationToken ct)

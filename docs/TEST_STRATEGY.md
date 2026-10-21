@@ -19,3 +19,13 @@ payment must record it once.
 
 Phase 3 adds a stock race: 4 parallel issues of 6 units against 10 on hand must leave exactly one success,
 clean 409s for the rest and 4 units in stock and on the ledger.
+
+Phase 4 tests (`IntegrationFeatureTests`) run a full night audit (blocked by a pending arrival, the exception
+accepted with a reason, closed once, retry returns the same close, the next day refused until it starts),
+check dashboard totals are weighted and missing days are reported, send a reservation email through the
+pickup folder exactly once, show a message without a provider failing and being retried or cancelled, take a
+contract through quarantine, scan, approval by someone else, download, signature, legal hold and retention,
+reject an infected file, keep files quarantined during a scanner outage, hide restricted documents, and walk
+incidents, lost property, complaints and visitors through their rules. A fake scanner flags any file containing
+`EICAR-TEST`, and background jobs are run on demand through `/system/jobs/run`. Unit tests cover the file-type
+rules and CSV escaping.

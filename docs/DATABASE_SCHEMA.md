@@ -55,6 +55,25 @@ a stay, so two clerks booking the last room at the same moment cannot both succe
 `Folios` gained `Type` (Guest or WalkIn) and `Name`; `ReservationId` and `GuestId` are now nullable so a
 walk-in restaurant sale has its own folio.
 
+## Phase 4 tables
+
+| Table | Purpose | Key constraints |
+| --- | --- | --- |
+| `BusinessDayCloses`, `BusinessDayExceptions` | one night-audit record per branch and date, with its findings and who accepted each exception and why | unique `(BranchId, BusinessDate)`; concurrency stamp so two managers closing at once get a 409 |
+| `BranchDailyMetrics`, `BranchDailyDepartmentMetrics`, `AnalyticsRefreshRuns` | daily snapshot (rooms available and sold, room and other revenue, tax, collections, refunds, arrivals, departures, cancellations, no-shows, complaints) and revenue and cost by department | one row per branch and date (and department); rows taken by the night audit are final and never recomputed |
+| `NotificationTemplates` | versioned message text per event, channel and language; branch overrides company | highest active version wins |
+| `NotificationOutbox`, `NotificationDeliveries`, `NotificationReads`, `NotificationPreferences` | messages written in the same transaction as the business event, each send attempt, in-app read marks, opt-outs | unique `(BranchId, IdempotencyKey)` so an event queues a message once; workers claim rows with a lease id (concurrency token); deliveries are append-only |
+| `Documents`, `DocumentVersions`, `DocumentSignatures` | private files with category, classification, retention and legal hold; each version's SHA-256, scan result and approval; tamper-evident signatures | unique `(DocumentId, VersionNumber)` and storage key; signatures are append-only |
+| `SecurityIncidents`, `IncidentActions` | incident register with an append-only history | unique `INC-` number |
+| `LostFoundItems`, `LostFoundCustodyEvents` | found property with a chain of custody | unique `LF-` number; custody events are append-only |
+| `VisitorLogs` | visitor sign-in and sign-out; purged after `Security:VisitorRetentionDays` (default 365) | |
+| `GuestComplaints` | complaints with owner, resolution and the business dates opened and resolved | unique `CMP-` number |
+| `EmergencyEvents`, `EmergencyActions` | emergencies and a timed log of actions taken | actions are append-only |
+
+`Branches` gained `LastClosedBusinessDate`. The business date is the clock date, except after the night audit
+closes today, when it moves to tomorrow. Primary keys are now generated in code only (`ValueGeneratedNever`),
+so a new child added to a loaded parent is always inserted.
+
 ### How operations post to the ledger
 
 | Event | Journal |

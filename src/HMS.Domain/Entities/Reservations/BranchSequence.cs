@@ -25,4 +25,7 @@ public static class SequenceNames
     public const string KitchenTicket = "KOT";
     public const string WorkOrder = "WO";
     public const string StockDocument = "STK";
+    public const string Incident = "INC";
+    public const string LostFound = "LF";
+    public const string Complaint = "CMP";
 }

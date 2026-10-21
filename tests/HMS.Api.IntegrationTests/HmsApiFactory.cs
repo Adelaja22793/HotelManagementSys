@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using HMS.Application.Abstractions;
+using HMS.Application.Documents;
 using HMS.Contracts.Auth;
 using HMS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
@@ -19,6 +20,24 @@ public sealed class TestClock : IClock
     private TimeSpan _offset;
     public DateTime UtcNow => DateTime.UtcNow + _offset;
     public void AdvanceDays(int days) => _offset += TimeSpan.FromDays(days);
+}
+
+/// <summary>Scanner the tests control: clean by default, or flags any file containing the EICAR marker.</summary>
+public sealed class FakeMalwareScanner : IMalwareScanner
+{
+    public bool Unavailable { get; set; }
+    public string Name => "fake";
+
+    public async Task<ScanVerdict> ScanAsync(Stream content, CancellationToken ct)
+    {
+        if (Unavailable) return new ScanVerdict(ScanOutcome.Error, "scanner offline");
+        using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, ct);
+        var text = System.Text.Encoding.ASCII.GetString(buffer.ToArray());
+        return text.Contains("EICAR-TEST", StringComparison.Ordinal)
+            ? new ScanVerdict(ScanOutcome.Infected, "Eicar-Test-Signature")
+            : new ScanVerdict(ScanOutcome.Clean, null);
+    }
 }
 
 /// <summary>
@@ -48,6 +67,11 @@ public class HmsApiFactory : WebApplicationFactory<Program>
 
     public TestClock Clock { get; } = new();
 
+    /// <summary>Private folder for this factory's documents and picked-up emails; deleted on dispose.</summary>
+    public string DataRoot { get; } = Path.Combine(Path.GetTempPath(), "hms-tests", Guid.NewGuid().ToString("N"));
+    public string MailPickupPath => Path.Combine(DataRoot, "mail");
+    public FakeMalwareScanner Scanner { get; } = new();
+
     protected virtual int AuthPermitPerMinute => 10_000;
 
     private string ConnectionString => UsesSqlServer
@@ -73,12 +97,20 @@ public class HmsApiFactory : WebApplicationFactory<Program>
                 ["Bootstrap:AdminEmail"] = AdminEmail,
                 ["Bootstrap:AdminPassword"] = AdminPassword,
                 ["RateLimiting:AuthPermitPerMinute"] = AuthPermitPerMinute.ToString(),
+                // Jobs are run on demand through /system/jobs/run so tests stay deterministic.
+                ["BackgroundJobs:Enabled"] = "false",
+                ["Documents:StoragePath"] = Path.Combine(DataRoot, "documents"),
+                ["Email:Mode"] = "Pickup",
+                ["Email:PickupDirectory"] = MailPickupPath,
+                ["Email:FromAddress"] = "noreply@hms.test",
             });
         });
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IClock>();
             services.AddSingleton<IClock>(Clock);
+            services.RemoveAll<IMalwareScanner>();
+            services.AddSingleton<IMalwareScanner>(Scanner);
         });
     }
 
@@ -106,7 +138,11 @@ public class HmsApiFactory : WebApplicationFactory<Program>
             catch (Exception) { /* best effort cleanup of the throwaway database */ }
         }
         base.Dispose(disposing);
-        if (disposing) _keepAlive?.Dispose();
+        if (disposing)
+        {
+            _keepAlive?.Dispose();
+            try { if (Directory.Exists(DataRoot)) Directory.Delete(DataRoot, recursive: true); } catch (IOException) { }
+        }
     }
 }
 

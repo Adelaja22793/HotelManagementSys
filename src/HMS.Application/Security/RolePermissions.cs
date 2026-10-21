@@ -50,7 +50,7 @@ public static class RolePermissions
         [Roles.Accountant] =
         [
             BranchesView, FoliosView, PaymentsVerify, ReportsView, AccountingView, AccountingPost, AccountingManage,
-            AuditView, InventoryView, PurchasingManage, DocumentsView,
+            AuditView, InventoryView, PurchasingManage, DocumentsView, DocumentsManage,
         ],
 
         // Auditor is strictly read-only.
