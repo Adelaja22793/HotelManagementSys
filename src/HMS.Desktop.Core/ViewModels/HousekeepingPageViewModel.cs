@@ -10,6 +10,7 @@ namespace HMS.Desktop.ViewModels;
 public sealed partial class HousekeepingPageViewModel(ApiClient api, SessionState session) : PageViewModel
 {
     public override string Title => "Housekeeping";
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Housekeeping;
 
     public ObservableCollection<HousekeepingTaskDto> Tasks { get; } = [];
 

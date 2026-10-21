@@ -16,6 +16,8 @@ public sealed partial class FolioPageViewModel(ApiClient api, SessionState sessi
 
     public override string Title => "Folios and payments";
 
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Folios;
+
     [ObservableProperty] private string? _reservationNumber;
 
     [ObservableProperty]

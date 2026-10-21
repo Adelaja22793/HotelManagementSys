@@ -30,7 +30,7 @@ screen says so and links to the installer.
 | `src/HMS.Infrastructure` | EF Core (SQL Server), Identity, JWT, auditing, migrations. |
 | `src/HMS.Api` | Controllers, middleware, auth, health checks. |
 | `src/HMS.Desktop.Core` | Desktop view models and API client (no WPF), tested on any OS. |
-| `src/HMS.Desktop` | WPF views for the 18 modules (MVVM, CommunityToolkit). Runs on Windows. |
+| `src/HMS.Desktop` | WPF views for the 19 modules (MVVM, CommunityToolkit), including a Setup screen for master data and task buttons on each screen. Runs on Windows. |
 | `src/HMS.Updater`, `src/HMS.Launcher` | Signed desktop updates, side-by-side installs and the `HMS.exe` launcher. |
 | `booking-web` | Public booking website (React, Vite, TypeScript). See its README. |
 | `tools/HMS.ReleaseTool` | Generates update signing keys and signs update manifests. |

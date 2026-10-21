@@ -14,6 +14,8 @@ public sealed partial class MaintenancePageViewModel(ApiClient api, SessionState
 
     public override string Title => "Maintenance";
 
+    protected override IEnumerable<HMS.Desktop.ViewModels.Setup.ActionDefinition> ActionDefinitions => HMS.Desktop.ViewModels.Setup.ActionCatalog.Maintenance;
+
     public ObservableCollection<MaintenanceRequestDto> Requests { get; } = [];
     public ObservableCollection<WorkOrderDto> WorkOrders { get; } = [];
     public ObservableCollection<RoomDto> Rooms { get; } = [];

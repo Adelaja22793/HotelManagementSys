@@ -137,6 +137,12 @@ public partial class App : Application
         }
     }
 
+    // PasswordBox cannot be bound, so a task form's password field is copied to its value as the user types.
+    private void FormPassword_Changed(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.PasswordBox { DataContext: HMS.Desktop.ViewModels.Setup.FormField field } box) field.Text = box.Password;
+    }
+
     protected override async void OnExit(ExitEventArgs e)
     {
         if (_host is not null)

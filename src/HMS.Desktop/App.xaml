@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core"
              xmlns:pages="clr-namespace:HMS.Desktop.Views.Pages"
              xmlns:conv="clr-namespace:HMS.Desktop.Converters"
+             xmlns:setup="clr-namespace:HMS.Desktop.ViewModels.Setup;assembly=HMS.Desktop.Core"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -50,6 +51,30 @@
             <Setter Property="Margin" Value="0,0,12,12" />
         </Style>
 
+        <!-- One input on a Setup or task form; which control shows depends on the kind of value. -->
+        <DataTemplate DataType="{x:Type setup:FormField}">
+            <StackPanel Margin="0,0,0,2">
+                <TextBlock Text="{Binding Caption}" Style="{StaticResource Label}" TextWrapping="Wrap"
+                           Visibility="{Binding ShowsCaption, Converter={StaticResource BoolToVis}}" />
+                <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding IsTextInput, Converter={StaticResource BoolToVis}}" />
+                <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
+                         MinHeight="60" VerticalScrollBarVisibility="Auto"
+                         Visibility="{Binding IsLongText, Converter={StaticResource BoolToVis}}" />
+                <PasswordBox PasswordChanged="FormPassword_Changed" Margin="0,2,0,8" Padding="4,3"
+                             Visibility="{Binding IsSecret, Converter={StaticResource BoolToVis}}" />
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding Flag}" Margin="0,4,0,8"
+                          Visibility="{Binding IsYesNo, Converter={StaticResource BoolToVis}}" />
+                <DatePicker SelectedDate="{Binding Date}"
+                            Visibility="{Binding IsDate, Converter={StaticResource BoolToVis}}" />
+                <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
+                          IsEditable="{Binding AllowsOwnValue}" Text="{Binding Text, UpdateSourceTrigger=LostFocus}"
+                          Visibility="{Binding IsPicker, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="{Binding Hint}" Foreground="#7B8794" FontSize="11" Margin="0,-6,0,6" TextWrapping="Wrap"
+                           Visibility="{Binding Hint, Converter={StaticResource NotNullToVis}}" />
+            </StackPanel>
+        </DataTemplate>
+
         <!-- Each page view model is shown by its view. -->
         <DataTemplate DataType="{x:Type vm:DashboardPageViewModel}"><pages:DashboardPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:FrontDeskPageViewModel}"><pages:FrontDeskPage /></DataTemplate>
@@ -58,6 +83,7 @@
         <DataTemplate DataType="{x:Type vm:CashierPageViewModel}"><pages:CashierPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:HousekeepingPageViewModel}"><pages:HousekeepingPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:RoomsPageViewModel}"><pages:RoomsPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SetupPageViewModel}"><pages:SetupPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:GuestsPageViewModel}"><pages:GuestsPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:RestaurantPageViewModel}"><pages:RestaurantPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:MaintenancePageViewModel}"><pages:MaintenancePage /></DataTemplate>

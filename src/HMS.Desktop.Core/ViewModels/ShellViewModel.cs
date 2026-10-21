@@ -32,6 +32,7 @@ public sealed partial class ShellViewModel : ObservableObject
         new("Night audit", P.ReportsView, typeof(NightAuditPageViewModel)),
         new("Document centre", P.DocumentsView, typeof(DocumentsPageViewModel)),
         new("Security log", P.SecurityView, typeof(SecurityPageViewModel)),
+        new("Setup", P.BranchesView, typeof(SetupPageViewModel)),
         new("Users", P.UsersManage, typeof(UsersPageViewModel)),
         new("Audit log", P.AuditView, typeof(AuditLogPageViewModel)),
     ];
@@ -49,6 +50,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     private void OnNavigated(object? sender, PageViewModel page)
     {
+        page.UseActions(_api, Session);
         CurrentPage = page;
         _selectedModule = Modules.FirstOrDefault(m => m.PageType == page.GetType());
         OnPropertyChanged(nameof(SelectedModule));
