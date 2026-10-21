@@ -40,6 +40,38 @@ public sealed class ApiClient(HttpClient http, SessionState session)
     public Task<T> PutAsync<T>(string path, object body, CancellationToken ct = default) =>
         SendAsync<T>(HttpMethod.Put, path, body, true, ct);
 
+    public Task DeleteAsync(string path, CancellationToken ct = default) =>
+        SendAsync<object?>(HttpMethod.Delete, path, null, true, ct);
+
+    /// <summary>Sends a multipart form (file uploads). The content is rebuilt for the retry after a token refresh.</summary>
+    public Task<T> UploadAsync<T>(string path, Func<HttpContent> form, CancellationToken ct = default) =>
+        SendAsync<T>(HttpMethod.Post, path, form, true, ct);
+
+    /// <summary>Downloads a file. Returns its bytes and the server's suggested file name.</summary>
+    public async Task<(byte[] Content, string? FileName)> DownloadAsync(string path, CancellationToken ct = default)
+    {
+        var response = await SendOnceAsync(HttpMethod.Get, path, null, true, null, ct);
+        if (response.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshAsync(ct))
+        {
+            response.Dispose();
+            response = await SendOnceAsync(HttpMethod.Get, path, null, true, null, ct);
+        }
+        using (response)
+        {
+            await ThrowIfFailedAsync(response, ct);
+            var name = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"');
+            return (await response.Content.ReadAsByteArrayAsync(ct), name);
+        }
+    }
+
+    private static async Task ThrowIfFailedAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.IsSuccessStatusCode) return;
+        ApiError? error = null;
+        try { error = await response.Content.ReadFromJsonAsync<ApiError>(ct); } catch { /* non-JSON error body */ }
+        throw new ApiException(response.StatusCode, error);
+    }
+
     /// <summary>Builds a branch-scoped route for the currently selected branch.</summary>
     public string BranchPath(string relative) =>
         $"api/v1/branches/{session.Branch?.Id ?? throw new InvalidOperationException("No branch selected.")}/{relative.TrimStart('/')}";
@@ -55,12 +87,7 @@ public sealed class ApiClient(HttpClient http, SessionState session)
 
         using (response)
         {
-            if (!response.IsSuccessStatusCode)
-            {
-                ApiError? error = null;
-                try { error = await response.Content.ReadFromJsonAsync<ApiError>(ct); } catch { /* non-JSON error body */ }
-                throw new ApiException(response.StatusCode, error);
-            }
+            await ThrowIfFailedAsync(response, ct);
             if (response.StatusCode == HttpStatusCode.NoContent || typeof(T) == typeof(object)) return default!;
             return (await response.Content.ReadFromJsonAsync<T>(ct))!;
         }
@@ -69,7 +96,8 @@ public sealed class ApiClient(HttpClient http, SessionState session)
     private Task<HttpResponseMessage> SendOnceAsync(HttpMethod method, string path, object? body, bool authenticated, string? idempotencyKey, CancellationToken ct)
     {
         var request = new HttpRequestMessage(method, path);
-        if (body is not null) request.Content = JsonContent.Create(body, body.GetType());
+        if (body is Func<HttpContent> form) request.Content = form();
+        else if (body is not null) request.Content = JsonContent.Create(body, body.GetType());
         if (authenticated && session.AccessToken is { } token)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         if (idempotencyKey is not null) request.Headers.Add(HmsHeaders.IdempotencyKey, idempotencyKey);

@@ -12,14 +12,6 @@ namespace HMS.Desktop.Tests;
 /// </summary>
 public sealed class ScreenFlowTests(HmsApiFactory factory) : IClassFixture<HmsApiFactory>
 {
-    private sealed class YesDialogs : IDialogService
-    {
-        public List<string> Errors { get; } = [];
-        public void ShowError(string message, string? traceId = null) => Errors.Add(message);
-        public void ShowInfo(string message) { }
-        public bool Confirm(string message) => true;
-    }
-
     private sealed record Desk(ApiClient Api, SessionState Session, NavigationService Navigation, YesDialogs Dialogs);
 
     private async Task<Desk> SignInAsync(HotelSetup hotel, string email, string password)
@@ -197,6 +189,17 @@ public sealed class ScreenFlowTests(HmsApiFactory factory) : IClassFixture<HmsAp
         await reservations.LoadAsync();
         Assert.StartsWith("You do not have permission", reservations.ErrorMessage);
         Assert.False(reservations.CanManage);
+    }
+
+    [Fact]
+    public async Task Every_module_opens_a_screen_for_an_administrator()
+    {
+        var hotel = await HotelSetup.CreateAsync(factory, roomCount: 1);
+        var desk = await SignInAsync(hotel, HmsApiFactory.AdminEmail, HmsApiFactory.AdminPassword);
+        var shell = new ShellViewModel(desk.Api, desk.Session, desk.Navigation);
+        Assert.Equal(18, shell.Modules.Count);
+        Assert.All(shell.Modules, m => Assert.True(m.IsAvailable, m.Title));
+        Assert.All(shell.Modules, m => Assert.True(typeof(PageViewModel).IsAssignableFrom(m.PageType), m.Title));
     }
 
     private static async Task WaitFor(Func<bool> condition)

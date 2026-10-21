@@ -16,7 +16,10 @@ WPF desktop workstations ──HTTPS (hotel LAN)──▶ ASP.NET Core Web API �
   auditing and first-run bootstrap.
 - **Api** wires the HTTP pipeline: correlation ids, error contract, authentication, rate limiting,
   permission policies, the global branch-access filter and health checks.
-- **Desktop** is MVVM. `ApiClient` is its only data access path.
+- **Desktop** is MVVM. `HMS.Desktop.Core` holds the view models and the `ApiClient` (its only data access path) and has no
+  WPF dependency, so every screen's logic is tested on any OS against the real API. `HMS.Desktop` holds the XAML views,
+  one per view model, matched by `DataTemplate` in `App.xaml`. The module list in `ShellViewModel` is filtered by the
+  signed-in user's permissions; the API still checks every call.
 
 This is a modular monolith: one API deployment and one database, with modules separated by folder
 and service boundaries. Split services only when a real scaling or operational need appears.

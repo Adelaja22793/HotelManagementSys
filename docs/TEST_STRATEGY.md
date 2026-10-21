@@ -8,7 +8,7 @@
 | `HMS.Infrastructure.IntegrationTests` | **real SQL Server** | migrations, unique constraints, concurrency tokens |
 | `HMS.SecurityTests` | full HTTP pipeline (SQLite or SQL Server) and plain .NET | endpoint permission inventory, cross-branch sweep of every branch route, forged tokens, privilege escalation, document storage paths, desktop updater signatures and extraction |
 | `HMS.PerformanceTests` | **SQL Server only** | p95 of login, availability, guest search, booking, folio and dashboard against the blueprint targets; a burst of bookings for the last rooms; a 20-second mixed workload |
-| `HMS.Desktop.Tests` | Windows | ViewModels and API client behaviour |
+| `HMS.Desktop.Tests` | full HTTP pipeline, any OS | every screen's view model driven against the real API: booking to check-out and cleaning, POS order to kitchen and payment, stock wastage, counts and receiving, work orders, night audit with an accepted exception, manual journals and reversal, roster and leave approval, document upload, scan, download and signature, the security desk, user creation and audit export; segregation of duties and permission-filtered menus |
 | `booking-web` (Vitest) | jsdom | search and guest validation, token storage, the search → hold → guest → payment → confirmation flow with a mocked API |
 
 SQLite is used only where provider behaviour does not matter. Locking, unique-index races and

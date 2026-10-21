@@ -1,0 +1,46 @@
+<UserControl x:Class="HMS.Desktop.Views.Pages.NightAuditPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:HMS.Desktop.ViewModels;assembly=HMS.Desktop.Core">
+    <DockPanel>
+        <WrapPanel DockPanel.Dock="Top">
+            <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Current business date" />
+                <TextBlock FontSize="18" Text="{Binding Status.CurrentBusinessDate, Converter={StaticResource DateOnly}}" /></StackPanel></Border>
+            <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Last closed" />
+                <TextBlock FontSize="18" Text="{Binding Status.LastClosedBusinessDate, Converter={StaticResource DateOnly}, TargetNullValue='never'}" /></StackPanel></Border>
+            <Border Style="{StaticResource Card}"><StackPanel><TextBlock Style="{StaticResource Label}" Text="Next day to close" />
+                <TextBlock FontSize="18" Text="{Binding Status.NextDateToClose, Converter={StaticResource DateOnly}}" /></StackPanel></Border>
+            <Button Content="Run night audit" Command="{Binding CloseDayCommand}" VerticalAlignment="Center"
+                    Visibility="{Binding CanClose, Converter={StaticResource BoolToVis}}" />
+        </WrapPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Visibility="{Binding CanClose, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="0,0,8,0"><TextBlock Style="{StaticResource Label}" Text="Reason for accepting the selected exception" />
+                <TextBox Width="380" Text="{Binding AcceptReason, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+            <Button Content="Accept exception" Command="{Binding AcceptExceptionCommand}" VerticalAlignment="Center" />
+        </StackPanel>
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource SectionTitle}" Text="Exceptions from the last run" />
+                <DataGrid ItemsSource="{Binding Exceptions}" SelectedItem="{Binding SelectedException}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Severity" Binding="{Binding Severity}" />
+                        <DataGridTextColumn Header="Check" Binding="{Binding Code}" />
+                        <DataGridTextColumn Header="What needs attention" Binding="{Binding Message}" Width="*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                        <DataGridTextColumn Header="Accepted because" Binding="{Binding AcceptanceReason}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+            <TextBlock Grid.Row="1" Style="{StaticResource SectionTitle}" Text="Recent closes" />
+            <DataGrid Grid.Row="2" ItemsSource="{Binding History}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Business date" Binding="{Binding BusinessDate, Converter={StaticResource DateOnly}}" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" />
+                    <DataGridTextColumn Header="Runs" Binding="{Binding RunCount}" />
+                    <DataGridTextColumn Header="Closed (UTC)" Binding="{Binding ClosedAtUtc, StringFormat=g}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DockPanel>
+</UserControl>

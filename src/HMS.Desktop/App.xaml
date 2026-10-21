@@ -62,5 +62,12 @@
         <DataTemplate DataType="{x:Type vm:RestaurantPageViewModel}"><pages:RestaurantPage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:MaintenancePageViewModel}"><pages:MaintenancePage /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:InventoryPageViewModel}"><pages:InventoryPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:StaffPageViewModel}"><pages:StaffPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AccountingPageViewModel}"><pages:AccountingPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NightAuditPageViewModel}"><pages:NightAuditPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DocumentsPageViewModel}"><pages:DocumentsPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SecurityPageViewModel}"><pages:SecurityPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:UsersPageViewModel}"><pages:UsersPage /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AuditLogPageViewModel}"><pages:AuditLogPage /></DataTemplate>
     </Application.Resources>
 </Application>

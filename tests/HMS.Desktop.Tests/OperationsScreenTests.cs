@@ -12,23 +12,8 @@ namespace HMS.Desktop.Tests;
 /// <summary>Restaurant, maintenance and inventory screens driven against the real API running in memory.</summary>
 public sealed class OperationsScreenTests(HmsApiFactory factory) : IClassFixture<HmsApiFactory>
 {
-    private sealed class YesDialogs : IDialogService
-    {
-        public void ShowError(string message, string? traceId = null) { }
-        public void ShowInfo(string message) { }
-        public bool Confirm(string message) => true;
-    }
-
-    private async Task<(ApiClient Api, SessionState Session)> SignInAsync(HotelSetup hotel, string? email = null)
-    {
-        var session = new SessionState();
-        var api = new ApiClient(factory.CreateClient(), session);
-        var login = email is null
-            ? await api.LoginAsync(HmsApiFactory.AdminEmail, HmsApiFactory.AdminPassword)
-            : await api.LoginAsync(email, HotelSetup.StaffPassword);
-        session.Branch = login.Branches.Single(b => b.Id == hotel.Branch.Id);
-        return (api, session);
-    }
+    private Task<(ApiClient Api, SessionState Session)> SignInAsync(HotelSetup hotel, string? email = null) =>
+        TestDesk.SignInAsync(factory, hotel, email);
 
     private static async Task<T> PostAsync<T>(HotelSetup hotel, string relative, object body, bool keyed = false)
     {
@@ -47,7 +32,7 @@ public sealed class OperationsScreenTests(HmsApiFactory factory) : IClassFixture
         return (store, rice);
     }
 
-    private static void Ok(PageViewModel page) => Assert.True(page.ErrorMessage is null, $"{page.Title}: {page.ErrorMessage}");
+    private static void Ok(PageViewModel page) => TestDesk.Ok(page);
 
     [Fact]
     public async Task Restaurant_order_is_sent_cooked_and_paid_through_the_screen()

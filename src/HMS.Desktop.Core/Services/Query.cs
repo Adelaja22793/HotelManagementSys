@@ -13,6 +13,7 @@ public static class Query
                 null => null,
                 DateOnly d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 bool b => b ? "true" : "false",
+                DateTime t => t.ToString("O", CultureInfo.InvariantCulture),
                 IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
                 _ => v.Value.ToString(),
             }))

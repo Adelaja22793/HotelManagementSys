@@ -5,7 +5,7 @@ using P = HMS.Desktop.Services.PermissionNames;
 
 namespace HMS.Desktop.ViewModels;
 
-/// <summary>A module in the left-hand menu. <see cref="PageType"/> is null for modules whose screens are not built yet.</summary>
+/// <summary>A module in the left-hand menu and the screen it opens.</summary>
 public sealed record ModuleItem(string Title, string Permission, Type? PageType)
 {
     public bool IsAvailable => PageType is not null;
@@ -27,13 +27,13 @@ public sealed partial class ShellViewModel : ObservableObject
         new("Restaurant / POS", P.RestaurantOperate, typeof(RestaurantPageViewModel)),
         new("Inventory and purchasing", P.InventoryView, typeof(InventoryPageViewModel)),
         new("Maintenance", P.MaintenanceView, typeof(MaintenancePageViewModel)),
-        new("Staff and rosters", P.StaffView, null),
-        new("Accounting", P.AccountingView, null),
-        new("Night audit", P.ReportsView, null),
-        new("Document centre", P.DocumentsView, null),
-        new("Security log", P.SecurityView, null),
-        new("Users", P.UsersManage, null),
-        new("Audit log", P.AuditView, null),
+        new("Staff and rosters", P.StaffView, typeof(StaffPageViewModel)),
+        new("Accounting", P.AccountingView, typeof(AccountingPageViewModel)),
+        new("Night audit", P.ReportsView, typeof(NightAuditPageViewModel)),
+        new("Document centre", P.DocumentsView, typeof(DocumentsPageViewModel)),
+        new("Security log", P.SecurityView, typeof(SecurityPageViewModel)),
+        new("Users", P.UsersManage, typeof(UsersPageViewModel)),
+        new("Audit log", P.AuditView, typeof(AuditLogPageViewModel)),
     ];
 
     private readonly ApiClient _api;
